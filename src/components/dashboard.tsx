@@ -10,6 +10,7 @@ import { ProjectSelector } from '@/components/project-selector';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { IssuesChart } from '@/components/issues-chart';
 import { Navigation } from '@/components/navigation';
+import { LogoutButton } from '@/components/logout-button';
 import { Search, X } from 'lucide-react';
 import { LoadingProgress } from '@/components/loading-progress';
 import type { JiraIssue, JiraProject } from '@/lib/types';
@@ -229,7 +230,10 @@ export function Dashboard() {
             <h1 className="text-3xl font-bold">Jira Dashboard</h1>
             <Navigation />
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <LogoutButton />
+            <ThemeToggle />
+          </div>
         </div>
         <div className="flex flex-col gap-4">
           <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">

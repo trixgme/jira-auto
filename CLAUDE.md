@@ -20,6 +20,10 @@ The application requires Jira Cloud API credentials in `.env.local`:
 JIRA_CLOUD_URL=https://your-domain.atlassian.net
 JIRA_USER_EMAIL=your-email@example.com
 JIRA_API_TOKEN=your-jira-api-token
+
+# Authentication (optional - defaults to admin/admin, user/user)
+ADMIN_PASSWORD=your-admin-password
+USER_PASSWORD=your-user-password
 ```
 
 ## Architecture
@@ -81,9 +85,32 @@ The `JiraClient` class (`src/lib/jira.ts`) handles:
 - Environment variable validation in JiraClient constructor
 - Graceful fallbacks for missing data
 
+## Authentication System
+
+The application uses cookie-based authentication to protect all routes:
+
+### Login System
+- **Login Page**: `/login` - ID/password authentication form
+- **Protected Routes**: All pages except `/login` require authentication
+- **Middleware**: `src/middleware.ts` - Intercepts requests and checks auth cookie
+- **Session**: 24-hour cookie-based sessions
+
+### API Routes
+- `POST /api/auth/login` - Authenticate user and set auth cookie
+- `POST /api/auth/logout` - Clear auth cookie and logout
+
+### Default Credentials
+- `admin` / `admin` (or env: ADMIN_PASSWORD)
+- `user` / `user` (or env: USER_PASSWORD)
+
+### Components
+- `LogoutButton` - Logout functionality in dashboard headers
+- Login page with theme toggle and error handling
+
 ## Important Notes
 
 - Jira API tokens should never be committed to the repository
 - The app fetches all issues using pagination to handle large datasets
 - JQL queries are constructed dynamically based on filters
 - Korean language is used in the UI (configurable in layout.tsx)
+- Authentication is required for all pages except login

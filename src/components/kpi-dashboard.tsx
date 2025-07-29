@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Navigation } from '@/components/navigation';
 import { LoadingProgress } from '@/components/loading-progress';
+import { LogoutButton } from '@/components/logout-button';
 import { Users, Bug, CheckCircle, Clock, TrendingUp, ChevronUp, ChevronDown, ChevronsUpDown, ExternalLink, Star } from 'lucide-react';
 import type { JiraIssue, JiraProject } from '@/lib/types';
 
@@ -347,7 +348,10 @@ export function KpiDashboard() {
             <h1 className="text-3xl font-bold">KPI Dashboard</h1>
             <Navigation />
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <LogoutButton />
+            <ThemeToggle />
+          </div>
         </div>
         
         <div className="flex flex-col gap-4">
