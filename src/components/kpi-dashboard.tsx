@@ -6,7 +6,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Navigation } from '@/components/navigation';
-import { Users, Bug, CheckCircle, Clock, TrendingUp } from 'lucide-react';
+import { LoadingProgress } from '@/components/loading-progress';
+import { Users, Bug, CheckCircle, Clock, TrendingUp, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import type { JiraIssue, JiraProject } from '@/lib/types';
 
 interface UserKpi {
@@ -37,6 +38,11 @@ export function KpiDashboard() {
   });
 
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // 현재 월로 초기화
+  const [loadingStep, setLoadingStep] = useState(0);
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof UserKpi | 'resolutionRate';
+    direction: 'asc' | 'desc';
+  } | null>({ key: 'assigned', direction: 'desc' }); // 기본값: 할당된 이슈 수 내림차순
 
   useEffect(() => {
     fetchKpiData();
@@ -45,23 +51,28 @@ export function KpiDashboard() {
   const fetchKpiData = async () => {
     try {
       setData(prev => ({ ...prev, loading: true, error: null }));
+      setLoadingStep(0);
 
-      // 선택된 월의 이슈를 가져와서 KPI 계산
-      const [allIssuesRes, projectsRes] = await Promise.all([
-        fetch(`/api/jira/all-issues?month=${selectedMonth}`),
-        fetch('/api/jira/projects'),
-      ]);
-
-      if (!allIssuesRes.ok || !projectsRes.ok) {
-        throw new Error('Failed to fetch data');
+      setLoadingStep(1); // 프로젝트 정보 조회 중
+      const projectsRes = await fetch('/api/jira/projects');
+      
+      if (!projectsRes.ok) {
+        throw new Error('Failed to fetch projects');
       }
+      
+      const projectsData = await projectsRes.json();
 
-      const [allIssuesData, projectsData] = await Promise.all([
-        allIssuesRes.json(),
-        projectsRes.json(),
-      ]);
-
+      setLoadingStep(2); // 이슈 데이터 조회 중
+      const allIssuesRes = await fetch(`/api/jira/all-issues?month=${selectedMonth}`);
+      
+      if (!allIssuesRes.ok) {
+        throw new Error('Failed to fetch issues');
+      }
+      
+      const allIssuesData = await allIssuesRes.json();
       const issues: JiraIssue[] = allIssuesData.issues || [];
+
+      setLoadingStep(3); // KPI 데이터 계산 중
       
       console.log('처리할 이슈 개수:', issues.length);
       console.log('첫 번째 이슈 예시:', issues[0] ? {
@@ -127,7 +138,7 @@ export function KpiDashboard() {
           unresolved: stats.unresolved.length,
           avgResolutionTime,
         };
-      }).sort((a, b) => b.assigned - a.assigned); // 할당된 이슈 수로 정렬
+      });
 
       const totalIssues = issues.length;
       const totalResolved = issues.filter(issue => {
@@ -139,6 +150,8 @@ export function KpiDashboard() {
 
       console.log(`전체 통계: 총 ${totalIssues}개, 해결 ${totalResolved}개, 미해결 ${totalUnresolved}개`);
 
+      setLoadingStep(4); // 완료
+
       setData({
         userKpis,
         totalIssues,
@@ -147,6 +160,8 @@ export function KpiDashboard() {
         loading: false,
         error: null,
       });
+      
+      setLoadingStep(0); // 리셋
 
     } catch (error) {
       console.error('Error fetching KPI data:', error);
@@ -155,7 +170,55 @@ export function KpiDashboard() {
         loading: false,
         error: 'Failed to load KPI data. Please check your Jira configuration.',
       }));
+      setLoadingStep(0);
     }
+  };
+
+  const handleSort = (key: keyof UserKpi | 'resolutionRate') => {
+    let direction: 'asc' | 'desc' = 'desc';
+    
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'desc') {
+      direction = 'asc';
+    }
+    
+    setSortConfig({ key, direction });
+  };
+
+  const getSortedUserKpis = () => {
+    if (!sortConfig) return data.userKpis;
+
+    return [...data.userKpis].sort((a, b) => {
+      let aValue: number;
+      let bValue: number;
+
+      if (sortConfig.key === 'resolutionRate') {
+        aValue = a.assigned > 0 ? Math.round((a.resolved / a.assigned) * 100) : 0;
+        bValue = b.assigned > 0 ? Math.round((b.resolved / b.assigned) * 100) : 0;
+      } else if (sortConfig.key === 'user') {
+        return sortConfig.direction === 'asc' 
+          ? a.user.localeCompare(b.user)
+          : b.user.localeCompare(a.user);
+      } else {
+        aValue = a[sortConfig.key] as number;
+        bValue = b[sortConfig.key] as number;
+      }
+
+      if (sortConfig.direction === 'asc') {
+        return aValue - bValue;
+      } else {
+        return bValue - aValue;
+      }
+    });
+  };
+
+  const getSortIcon = (columnKey: keyof UserKpi | 'resolutionRate') => {
+    if (!sortConfig || sortConfig.key !== columnKey) {
+      return <ChevronsUpDown className="w-4 h-4 text-muted-foreground" />;
+    }
+    
+    return sortConfig.direction === 'asc' 
+      ? <ChevronUp className="w-4 h-4 text-primary" />
+      : <ChevronDown className="w-4 h-4 text-primary" />;
   };
 
   if (data.error) {
@@ -175,6 +238,14 @@ export function KpiDashboard() {
       </div>
     );
   }
+
+  const loadingSteps = [
+    '초기화 중...',
+    '프로젝트 정보 조회 중...',
+    '이슈 데이터 조회 중...',
+    'KPI 데이터 계산 중...',
+    '완료'
+  ];
 
   return (
     <div className="container mx-auto p-6">
@@ -208,6 +279,17 @@ export function KpiDashboard() {
           </div>
         </div>
       </div>
+
+      {/* 로딩 프로그레스 바 */}
+      {data.loading && (
+        <div className="mb-6">
+          <LoadingProgress
+            isLoading={data.loading}
+            steps={loadingSteps}
+            currentStep={loadingStep}
+          />
+        </div>
+      )}
 
       {/* 전체 통계 카드 */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
@@ -296,16 +378,65 @@ export function KpiDashboard() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left py-3 px-4 font-medium">사용자</th>
-                    <th className="text-center py-3 px-4 font-medium">할당된 이슈</th>
-                    <th className="text-center py-3 px-4 font-medium">해결된 이슈</th>
-                    <th className="text-center py-3 px-4 font-medium">미해결 이슈</th>
-                    <th className="text-center py-3 px-4 font-medium">해결률</th>
-                    <th className="text-center py-3 px-4 font-medium">평균 해결시간</th>
+                    <th 
+                      className="text-left py-3 px-4 font-medium cursor-pointer hover:bg-muted select-none"
+                      onClick={() => handleSort('user')}
+                    >
+                      <div className="flex items-center gap-2">
+                        사용자
+                        {getSortIcon('user')}
+                      </div>
+                    </th>
+                    <th 
+                      className="text-center py-3 px-4 font-medium cursor-pointer hover:bg-muted select-none"
+                      onClick={() => handleSort('assigned')}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        할당된 이슈
+                        {getSortIcon('assigned')}
+                      </div>
+                    </th>
+                    <th 
+                      className="text-center py-3 px-4 font-medium cursor-pointer hover:bg-muted select-none"
+                      onClick={() => handleSort('resolved')}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        해결된 이슈
+                        {getSortIcon('resolved')}
+                      </div>
+                    </th>
+                    <th 
+                      className="text-center py-3 px-4 font-medium cursor-pointer hover:bg-muted select-none"
+                      onClick={() => handleSort('unresolved')}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        미해결 이슈
+                        {getSortIcon('unresolved')}
+                      </div>
+                    </th>
+                    <th 
+                      className="text-center py-3 px-4 font-medium cursor-pointer hover:bg-muted select-none"
+                      onClick={() => handleSort('resolutionRate')}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        해결률
+                        {getSortIcon('resolutionRate')}
+                      </div>
+                    </th>
+                    <th className="text-center py-3 px-4 font-medium">해결률 차트</th>
+                    <th 
+                      className="text-center py-3 px-4 font-medium cursor-pointer hover:bg-muted select-none"
+                      onClick={() => handleSort('avgResolutionTime')}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        평균 해결시간
+                        {getSortIcon('avgResolutionTime')}
+                      </div>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {data.userKpis.map((userKpi) => {
+                  {getSortedUserKpis().map((userKpi) => {
                     const resolutionRate = userKpi.assigned > 0 ? 
                       Math.round((userKpi.resolved / userKpi.assigned) * 100) : 0;
                     
@@ -332,6 +463,20 @@ export function KpiDashboard() {
                           >
                             {resolutionRate}%
                           </Badge>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <div className="flex items-center justify-center">
+                            <div className="w-24 h-4 bg-gray-200 rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full transition-all duration-500 ease-out ${
+                                  resolutionRate >= 80 ? 'bg-green-500' : 
+                                  resolutionRate >= 60 ? 'bg-yellow-500' : 
+                                  'bg-red-500'
+                                }`}
+                                style={{ width: `${resolutionRate}%` }}
+                              />
+                            </div>
+                          </div>
                         </td>
                         <td className="py-3 px-4 text-center text-sm text-muted-foreground">
                           {userKpi.avgResolutionTime > 0 ? `${userKpi.avgResolutionTime}일` : '-'}

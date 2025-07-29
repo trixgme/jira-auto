@@ -11,6 +11,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { IssuesChart } from '@/components/issues-chart';
 import { Navigation } from '@/components/navigation';
 import { Search, X } from 'lucide-react';
+import { LoadingProgress } from '@/components/loading-progress';
 import type { JiraIssue, JiraProject } from '@/lib/types';
 
 interface DashboardData {
@@ -35,6 +36,7 @@ export function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSearchQuery, setActiveSearchQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [loadingStep, setLoadingStep] = useState(0);
 
   useEffect(() => {
     fetchProjects();
@@ -49,6 +51,7 @@ export function Dashboard() {
 
   const fetchProjects = async () => {
     try {
+      setLoadingStep(0);
       const response = await fetch('/api/jira/projects');
       if (!response.ok) {
         throw new Error('Failed to fetch projects');
@@ -67,24 +70,31 @@ export function Dashboard() {
   const fetchDashboardData = async () => {
     try {
       setData(prev => ({ ...prev, loading: true, error: null }));
+      setLoadingStep(0);
 
       const projectParam = selectedProject !== 'all' ? `&project=${selectedProject}` : '';
       
       console.log('모든 이슈를 가져오는 중... (시간이 조금 걸릴 수 있습니다)');
       
-      const [newIssuesRes, completedIssuesRes] = await Promise.all([
-        fetch(`/api/jira/new-issues?days=${daysBack}${projectParam}`),
-        fetch(`/api/jira/completed-issues?days=${daysBack}${projectParam}`),
-      ]);
-
-      if (!newIssuesRes.ok || !completedIssuesRes.ok) {
-        throw new Error('Failed to fetch data');
+      setLoadingStep(1); // 새로운 이슈 조회 중
+      const newIssuesRes = await fetch(`/api/jira/new-issues?days=${daysBack}${projectParam}`);
+      
+      if (!newIssuesRes.ok) {
+        throw new Error('Failed to fetch new issues');
       }
+      
+      const newIssuesData = await newIssuesRes.json();
+      
+      setLoadingStep(2); // 완료된 이슈 조회 중
+      const completedIssuesRes = await fetch(`/api/jira/completed-issues?days=${daysBack}${projectParam}`);
+      
+      if (!completedIssuesRes.ok) {
+        throw new Error('Failed to fetch completed issues');  
+      }
+      
+      const completedIssuesData = await completedIssuesRes.json();
 
-      const [newIssuesData, completedIssuesData] = await Promise.all([
-        newIssuesRes.json(),
-        completedIssuesRes.json(),
-      ]);
+      setLoadingStep(3); // 데이터 처리 중
 
       console.log(`새로운 이슈: ${newIssuesData.issues.length}개, 완료된 이슈: ${completedIssuesData.issues.length}개`);
 
@@ -95,6 +105,8 @@ export function Dashboard() {
         loading: false,
         error: null,
       }));
+      
+      setLoadingStep(0); // 완료
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       setData(prev => ({
@@ -102,6 +114,7 @@ export function Dashboard() {
         loading: false,
         error: 'Failed to load dashboard data. Please check your Jira configuration.',
       }));
+      setLoadingStep(0);
     }
   };
 
@@ -119,6 +132,13 @@ export function Dashboard() {
 
   const filteredNewIssues = filterIssues(data.newIssues);
   const filteredCompletedIssues = filterIssues(data.completedIssues);
+
+  const loadingSteps = [
+    '프로젝트 정보 조회 중...',
+    '새로운 이슈 조회 중...',
+    '완료된 이슈 조회 중...',
+    '데이터 처리 중...'
+  ];
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -239,6 +259,17 @@ export function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* 로딩 프로그레스 바 */}
+      {data.loading && (
+        <div className="mb-6">
+          <LoadingProgress
+            isLoading={data.loading}
+            steps={loadingSteps}
+            currentStep={loadingStep}
+          />
+        </div>
+      )}
 
       {/* 차트 섹션 */}
       <div className="mb-6">
