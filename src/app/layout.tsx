@@ -16,10 +16,7 @@ export default function RootLayout({
     <html lang="ko" suppressHydrationWarning>
       <body className="antialiased">
         <ThemeProvider
-          attribute="class"
           defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
         >
           {children}
         </ThemeProvider>
