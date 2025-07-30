@@ -154,10 +154,10 @@ export function IssueCard({ issue, onDifficultyAnalyzed }: IssueCardProps) {
         className="hover:shadow-lg transition-shadow duration-200 cursor-pointer hover:bg-accent/50" 
         onClick={handleCardClick}
       >
-      <CardContent className="p-4">
-        <div className="flex justify-between items-start mb-2">
-          <div className="flex items-start gap-2 flex-1 mr-2">
-            <h3 className="text-sm font-semibold line-clamp-2 flex-1">
+      <CardContent className="p-3 sm:p-4">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
+          <div className="flex items-start gap-2 flex-1">
+            <h3 className="text-xs sm:text-sm font-semibold line-clamp-2 flex-1">
               {issue.fields.summary}
             </h3>
             {issue.fields.comment && issue.fields.comment.total > 0 && (
@@ -167,8 +167,8 @@ export function IssueCard({ issue, onDifficultyAnalyzed }: IssueCardProps) {
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs shrink-0">
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            <Badge variant="outline" className="text-[10px] sm:text-xs shrink-0">
               {issue.key}
             </Badge>
             <div className="flex items-center gap-1">
@@ -190,7 +190,7 @@ export function IssueCard({ issue, onDifficultyAnalyzed }: IssueCardProps) {
                   size="sm"
                   onClick={analyzeDifficulty}
                   disabled={isAnalyzing}
-                  className="h-6 px-2"
+                  className="h-6 px-1 sm:px-2"
                 >
                   {isAnalyzing ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
@@ -207,7 +207,7 @@ export function IssueCard({ issue, onDifficultyAnalyzed }: IssueCardProps) {
                   size="sm"
                   onClick={analyzeComments}
                   disabled={isAnalyzingComments}
-                  className="h-6 px-2"
+                  className="h-6 px-1 sm:px-2"
                   title="댓글 분석"
                 >
                   {isAnalyzingComments ? (
@@ -221,27 +221,27 @@ export function IssueCard({ issue, onDifficultyAnalyzed }: IssueCardProps) {
           </div>
         </div>
         
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs text-muted-foreground truncate">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2 mb-2">
+          <span className="text-[10px] sm:text-xs text-muted-foreground truncate">
             {issue.fields.project.name}
           </span>
-          <div className="flex gap-1">
-            <Badge className={`${getStatusColor(issue.fields.status.statusCategory.key)} text-white text-xs px-2 py-0`}>
+          <div className="flex gap-1 flex-wrap">
+            <Badge className={`${getStatusColor(issue.fields.status.statusCategory.key)} text-white text-[10px] sm:text-xs px-1 sm:px-2 py-0`}>
               {issue.fields.status.name}
             </Badge>
             {issue.fields.priority && (
-              <Badge className={`${getPriorityColor(issue.fields.priority.name)} text-white text-xs px-2 py-0`}>
+              <Badge className={`${getPriorityColor(issue.fields.priority.name)} text-white text-[10px] sm:text-xs px-1 sm:px-2 py-0`}>
                 {issue.fields.priority.name}
               </Badge>
             )}
           </div>
         </div>
         
-        <div className="flex justify-between text-xs text-muted-foreground">
+        <div className="flex flex-col sm:flex-row sm:justify-between text-[10px] sm:text-xs text-muted-foreground gap-1">
           <span>생성: {new Date(issue.fields.created).toLocaleDateString('ko-KR')}</span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             {difficulty && (
-              <span className="text-xs">예상 {difficulty.estimatedHours}시간</span>
+              <span className="text-[10px] sm:text-xs">예상 {difficulty.estimatedHours}시간</span>
             )}
             {issue.fields.assignee && (
               <span className="truncate">{issue.fields.assignee.displayName}</span>

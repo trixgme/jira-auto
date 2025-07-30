@@ -228,7 +228,7 @@ export function Dashboard() {
 
   if (data.error) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto p-4 sm:p-6">
         <Card>
           <CardHeader>
             <CardTitle className="text-red-500">Error</CardTitle>
@@ -245,14 +245,16 @@ export function Dashboard() {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center gap-8">
-            <h1 className="text-3xl font-bold">Jira Dashboard</h1>
-            <Navigation />
+    <div className="container mx-auto p-4 sm:p-6">
+      <div className="mb-4 sm:mb-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
+            <h1 className="text-2xl sm:text-3xl font-bold">Jira Dashboard</h1>
+            <div className="sm:block">
+              <Navigation />
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 self-start sm:self-auto">
             <LogoutButton />
             <ThemeToggle />
           </div>
@@ -274,12 +276,12 @@ export function Dashboard() {
                 </div>
               )}
             </div>
-            <div className="lg:w-80">
+            <div className="w-full lg:w-80">
               {SearchBar}
             </div>
           </div>
           {activeSearchQuery && (
-            <div className="text-sm text-muted-foreground">
+            <div className="text-xs sm:text-sm text-muted-foreground">
               검색 결과: 새로운 이슈 {filteredNewIssues.length}개, 완료된 이슈 {filteredCompletedIssues.length}개
             </div>
           )}
@@ -310,7 +312,7 @@ export function Dashboard() {
         )}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
@@ -323,7 +325,7 @@ export function Dashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {data.loading ? (
                 <>
                   <Skeleton className="h-20" />
@@ -359,7 +361,7 @@ export function Dashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {data.loading ? (
                 <>
                   <Skeleton className="h-20" />
