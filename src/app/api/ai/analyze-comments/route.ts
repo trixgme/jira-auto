@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const commentsText = comments.map((comment, index) => 
+    const commentsText = comments.map((comment: any, index: number) => 
       `Comment ${index + 1} (${comment.author}): ${comment.body}`
     ).join('\n\n');
 
