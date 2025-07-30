@@ -20,6 +20,18 @@ export interface IssueDifficulty {
   commentAdded?: boolean;
 }
 
+export interface CommentAnalysis {
+  score: number;
+  analysisKo: string;
+  analysisEn: string;
+  isHardToDetermine: boolean;
+  keyIssues: string[];
+  recommendations: string[];
+  scoreDescriptionKo: string;
+  scoreDescriptionEn: string;
+  analyzedAt?: Date;
+}
+
 export interface JiraIssue {
   id: string;
   key: string;

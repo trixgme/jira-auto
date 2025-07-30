@@ -9,10 +9,11 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { Navigation } from '@/components/navigation';
 import { LoadingProgress } from '@/components/loading-progress';
 import { LogoutButton } from '@/components/logout-button';
-import { Users, Bug, CheckCircle, Clock, TrendingUp, ChevronUp, ChevronDown, ChevronsUpDown, ExternalLink, Star, Sparkles, Loader2 } from 'lucide-react';
-import type { JiraIssue, JiraProject, IssueDifficulty } from '@/lib/types';
+import { Users, Bug, CheckCircle, Clock, TrendingUp, ChevronUp, ChevronDown, ChevronsUpDown, ExternalLink, Star, Sparkles, Loader2, MessageSquare } from 'lucide-react';
+import type { JiraIssue, JiraProject, IssueDifficulty, CommentAnalysis } from '@/lib/types';
 import { DifficultyBadge } from '@/components/difficulty-badge';
 import { DifficultyDialog } from '@/components/difficulty-dialog';
+import { CommentAnalysisDialog } from '@/components/comment-analysis-dialog';
 import { Button } from '@/components/ui/button';
 import { DifficultyCache } from '@/lib/difficulty-cache';
 
@@ -65,6 +66,9 @@ export function KpiDashboard() {
     return {};
   });
   const [showDifficultyDialog, setShowDifficultyDialog] = useState<string | null>(null);
+  const [analyzingComments, setAnalyzingComments] = useState<Set<string>>(new Set());
+  const [commentsAnalysis, setCommentsAnalysis] = useState<Record<string, CommentAnalysis>>({});
+  const [showCommentAnalysisDialog, setShowCommentAnalysisDialog] = useState<string | null>(null);
 
   useEffect(() => {
     loadFavoriteUsers();
@@ -377,6 +381,48 @@ export function KpiDashboard() {
     }
   };
 
+  const analyzeComments = async (issue: JiraIssue) => {
+    const issueKey = issue.key;
+    setAnalyzingComments(prev => new Set(prev).add(issueKey));
+    
+    try {
+      const response = await fetch('/api/ai/analyze-comments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          issueKey: issue.key,
+          issueTitle: issue.fields.summary,
+          issueDescription: issue.fields.description,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const analysis = { ...result, analyzedAt: new Date() };
+        setCommentsAnalysis(prev => ({
+          ...prev,
+          [issueKey]: analysis
+        }));
+        setShowCommentAnalysisDialog(issueKey);
+      } else {
+        const error = await response.json();
+        console.error('Comment analysis failed:', error);
+        alert(`댓글 분석 실패: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Failed to analyze comments:', error);
+      alert('댓글 분석 중 오류가 발생했습니다.');
+    } finally {
+      setAnalyzingComments(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(issueKey);
+        return newSet;
+      });
+    }
+  };
+
   if (data.error) {
     return (
       <div className="container mx-auto p-6">
@@ -404,14 +450,16 @@ export function KpiDashboard() {
   ];
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center gap-8">
-            <h1 className="text-3xl font-bold">KPI Dashboard</h1>
-            <Navigation />
+    <div className="container mx-auto p-4 sm:p-6">
+      <div className="mb-4 sm:mb-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
+            <h1 className="text-2xl sm:text-3xl font-bold">KPI Dashboard</h1>
+            <div className="sm:block">
+              <Navigation />
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 self-start sm:self-auto">
             <LogoutButton />
             <ThemeToggle />
           </div>
@@ -541,8 +589,10 @@ export function KpiDashboard() {
               KPI 데이터가 없습니다.
             </p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full table-fixed">
+            <>
+              {/* 데스크톱 테이블 뷰 */}
+              <div className="hidden lg:block overflow-x-auto">
+                <table className="w-full table-fixed">
                 <thead>
                   <tr className="border-b">
                     <th 
@@ -764,7 +814,7 @@ export function KpiDashboard() {
                                           )}
                                         </a>
                                         
-                                        <div className="flex flex-col gap-2 flex-shrink-0">
+                                        <div className="flex items-center gap-2 flex-shrink-0">
                                           <a
                                             href={getJiraIssueUrl(issue.key)}
                                             target="_blank"
@@ -779,36 +829,59 @@ export function KpiDashboard() {
                                             <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
                                           </a>
                                           
-                                          {difficulty ? (
-                                            <Button
-                                              variant="ghost"
-                                              size="sm"
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                setShowDifficultyDialog(issue.key);
-                                              }}
-                                              className="h-6 p-0"
-                                            >
-                                              <DifficultyBadge difficulty={difficulty.difficulty} size="sm" />
-                                            </Button>
-                                          ) : (
-                                            <Button
-                                              variant="ghost"
-                                              size="sm"
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                analyzeDifficulty(issue);
-                                              }}
-                                              disabled={isAnalyzing}
-                                              className="h-6 px-2"
-                                            >
-                                              {isAnalyzing ? (
-                                                <Loader2 className="h-3 w-3 animate-spin" />
-                                              ) : (
-                                                <Sparkles className="h-3 w-3" />
-                                              )}
-                                            </Button>
-                                          )}
+                                          <div className="flex items-center gap-1">
+                                            {difficulty ? (
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setShowDifficultyDialog(issue.key);
+                                                }}
+                                                className="h-6 p-0"
+                                              >
+                                                <DifficultyBadge difficulty={difficulty.difficulty} size="sm" />
+                                              </Button>
+                                            ) : (
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  analyzeDifficulty(issue);
+                                                }}
+                                                disabled={isAnalyzing}
+                                                className="h-6 px-2"
+                                              >
+                                                {isAnalyzing ? (
+                                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                                ) : (
+                                                  <Sparkles className="h-3 w-3" />
+                                                )}
+                                              </Button>
+                                            )}
+                                            
+                                            {/* 댓글 분석 버튼 - 댓글이 2개 이상일 때만 표시 */}
+                                            {issue.fields.comment && issue.fields.comment.total >= 2 && (
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  analyzeComments(issue);
+                                                }}
+                                                disabled={analyzingComments.has(issue.key)}
+                                                className="h-6 px-2"
+                                                title="댓글 분석"
+                                              >
+                                                {analyzingComments.has(issue.key) ? (
+                                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                                ) : (
+                                                  <MessageSquare className="h-3 w-3" />
+                                                )}
+                                              </Button>
+                                            )}
+                                          </div>
                                         </div>
                                       </div>
                                     </div>
@@ -863,7 +936,287 @@ export function KpiDashboard() {
                   })}
                 </tbody>
               </table>
-            </div>
+              </div>
+              
+              {/* 모바일 카드 뷰 */}
+              <div className="lg:hidden space-y-4">
+                {getSortedUserKpis().map((userKpi) => {
+                  const resolutionRate = userKpi.assigned > 0 ? 
+                    Math.round((userKpi.resolved / userKpi.assigned) * 100) : 0;
+                  
+                  return (
+                    <Card key={userKpi.user} className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-lg">{userKpi.user}</h3>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleFavoriteUser(userKpi.user)}
+                            className="p-1 h-auto"
+                          >
+                            <Star
+                              className={`w-4 h-4 ${
+                                favoriteUsers.has(userKpi.user)
+                                  ? 'fill-yellow-400 text-yellow-400'
+                                  : 'text-muted-foreground hover:text-yellow-400'
+                              }`}
+                            />
+                          </Button>
+                        </div>
+                        <Badge 
+                          variant={resolutionRate >= 70 ? "default" : "secondary"}
+                          className={resolutionRate >= 70 ? "bg-blue-500 hover:bg-blue-600" : ""}
+                        >
+                          해결률 {resolutionRate}%
+                        </Badge>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold">{userKpi.assigned}</div>
+                          <div className="text-xs text-muted-foreground">할당된 이슈</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-green-600">{userKpi.resolved}</div>
+                          <div className="text-xs text-muted-foreground">해결된 이슈</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-orange-600">{userKpi.unresolved}</div>
+                          <div className="text-xs text-muted-foreground">미해결 이슈</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold">
+                            {userKpi.avgResolutionTime > 0 ? `${userKpi.avgResolutionTime}일` : '-'}
+                          </div>
+                          <div className="text-xs text-muted-foreground">평균 해결시간</div>
+                        </div>
+                      </div>
+                      
+                      {/* 해결률 차트 */}
+                      <div className="mb-4">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm text-muted-foreground">해결률 진행도</span>
+                          <span className="text-sm font-medium">{resolutionRate}%</span>
+                        </div>
+                        <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full transition-all duration-500 ease-out ${
+                              resolutionRate >= 80 ? 'bg-green-500' : 
+                              resolutionRate >= 60 ? 'bg-yellow-500' : 
+                              'bg-red-500'
+                            }`}
+                            style={{ width: `${resolutionRate}%` }}
+                          />
+                        </div>
+                      </div>
+                      
+                      {/* 이슈 목록 버튼 */}
+                      {userIssues[userKpi.user] && userIssues[userKpi.user].length > 0 && (
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" className="w-full">
+                              이슈 목록 보기 ({userIssues[userKpi.user].length}개)
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                            <DialogHeader>
+                              <DialogTitle>{userKpi.user}의 이슈 목록</DialogTitle>
+                              <div className="flex gap-2 mt-2">
+                                <Button
+                                  variant={selectedUserFilter === 'all' ? 'default' : 'outline'}
+                                  size="sm"
+                                  onClick={() => setSelectedUserFilter('all')}
+                                >
+                                  전체 ({getFilteredIssuesCount(userIssues[userKpi.user], 'all')})
+                                </Button>
+                                <Button
+                                  variant={selectedUserFilter === 'todo' ? 'default' : 'outline'}
+                                  size="sm"
+                                  onClick={() => setSelectedUserFilter('todo')}
+                                >
+                                  해야할 일 ({getFilteredIssuesCount(userIssues[userKpi.user], 'todo')})
+                                </Button>
+                                <Button
+                                  variant={selectedUserFilter === 'completed' ? 'default' : 'outline'}
+                                  size="sm"
+                                  onClick={() => setSelectedUserFilter('completed')}
+                                >
+                                  완료 ({getFilteredIssuesCount(userIssues[userKpi.user], 'completed')})
+                                </Button>
+                              </div>
+                            </DialogHeader>
+                            <div className="space-y-3">
+                              {(() => {
+                                const filteredIssues = filterUserIssues(userIssues[userKpi.user] || [], selectedUserFilter);
+                                
+                                if (filteredIssues.length === 0) {
+                                  return (
+                                    <div className="text-center text-muted-foreground py-8">
+                                      {selectedUserFilter === 'all' && '할당된 이슈가 없습니다.'}
+                                      {selectedUserFilter === 'todo' && '해야할 이슈가 없습니다.'}
+                                      {selectedUserFilter === 'completed' && '완료된 이슈가 없습니다.'}
+                                    </div>
+                                  );
+                                }
+                                
+                                return filteredIssues.map((issue) => {
+                                  const isResolved = issue.fields.status.statusCategory?.key === 'done' || 
+                                    ['Done', 'Resolved', 'Closed', 'Complete', 'Fixed'].includes(issue.fields.status.name);
+                                  const difficulty = issuesDifficulty[issue.key];
+                                  const isAnalyzing = analyzingIssues.has(issue.key);
+                                  
+                                  return (
+                                    <div key={issue.id} className="border rounded-lg p-4 hover:bg-muted/50 hover:border-primary/50 transition-all group">
+                                      <div className="flex items-start justify-between gap-3">
+                                        <a
+                                          href={getJiraIssueUrl(issue.key)}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className={`flex-1 min-w-0 ${
+                                            jiraCloudUrl ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
+                                          }`}
+                                          onClick={(e) => {
+                                            if (!jiraCloudUrl) {
+                                              e.preventDefault();
+                                            }
+                                          }}
+                                        >
+                                          <div className="flex flex-wrap items-center gap-2 mb-2">
+                                            <Badge variant="outline" className="text-xs group-hover:border-primary/50">
+                                              {issue.key}
+                                            </Badge>
+                                            <Badge 
+                                              className={`text-xs ${
+                                                isResolved 
+                                                  ? 'bg-green-500 hover:bg-green-600' 
+                                                  : 'bg-orange-500 hover:bg-orange-600'
+                                              }`}
+                                            >
+                                              {issue.fields.status.name}
+                                            </Badge>
+                                            {issue.fields.priority && (
+                                              <Badge variant="secondary" className="text-xs">
+                                                {issue.fields.priority.name}
+                                              </Badge>
+                                            )}
+                                            {difficulty && (
+                                              <DifficultyBadge difficulty={difficulty.difficulty} size="sm" />
+                                            )}
+                                          </div>
+                                          <h4 
+                                            className="font-medium text-sm mb-2 break-words group-hover:text-primary leading-relaxed"
+                                            style={{
+                                              display: '-webkit-box',
+                                              WebkitLineClamp: 2,
+                                              WebkitBoxOrient: 'vertical',
+                                              overflow: 'hidden',
+                                              wordBreak: 'break-word'
+                                            }}
+                                          >
+                                            {issue.fields.summary}
+                                          </h4>
+                                          <div className="text-xs text-muted-foreground">
+                                            프로젝트: {issue.fields.project.name}
+                                          </div>
+                                          <div className="text-xs text-muted-foreground">
+                                            생성일: {new Date(issue.fields.created).toLocaleDateString('ko-KR')}
+                                          </div>
+                                          {issue.fields.resolutiondate && (
+                                            <div className="text-xs text-muted-foreground">
+                                              완료일: {new Date(issue.fields.resolutiondate).toLocaleDateString('ko-KR')}
+                                            </div>
+                                          )}
+                                          {difficulty && (
+                                            <div className="text-xs text-muted-foreground">
+                                              예상 {difficulty.estimatedHours}시간
+                                            </div>
+                                          )}
+                                        </a>
+                                        
+                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                          <a
+                                            href={getJiraIssueUrl(issue.key)}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className={jiraCloudUrl ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}
+                                            onClick={(e) => {
+                                              if (!jiraCloudUrl) {
+                                                e.preventDefault();
+                                              }
+                                            }}
+                                          >
+                                            <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                                          </a>
+                                          
+                                          <div className="flex items-center gap-1">
+                                            {difficulty ? (
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setShowDifficultyDialog(issue.key);
+                                                }}
+                                                className="h-6 p-0"
+                                              >
+                                                <DifficultyBadge difficulty={difficulty.difficulty} size="sm" />
+                                              </Button>
+                                            ) : (
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  analyzeDifficulty(issue);
+                                                }}
+                                                disabled={isAnalyzing}
+                                                className="h-6 px-2"
+                                              >
+                                                {isAnalyzing ? (
+                                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                                ) : (
+                                                  <Sparkles className="h-3 w-3" />
+                                                )}
+                                              </Button>
+                                            )}
+                                            
+                                            {/* 댓글 분석 버튼 - 댓글이 2개 이상일 때만 표시 */}
+                                            {issue.fields.comment && issue.fields.comment.total >= 2 && (
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  analyzeComments(issue);
+                                                }}
+                                                disabled={analyzingComments.has(issue.key)}
+                                                className="h-6 px-2"
+                                                title="댓글 분석"
+                                              >
+                                                {analyzingComments.has(issue.key) ? (
+                                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                                ) : (
+                                                  <MessageSquare className="h-3 w-3" />
+                                                )}
+                                              </Button>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                });
+                              })()}
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      )}
+                    </Card>
+                  );
+                })}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
@@ -882,6 +1235,23 @@ export function KpiDashboard() {
               .find(issue => issue.key === showDifficultyDialog)?.fields.summary || ''
           }
           difficulty={issuesDifficulty[showDifficultyDialog]}
+        />
+      )}
+      
+      {/* 댓글 분석 다이얼로그 */}
+      {showCommentAnalysisDialog && commentsAnalysis[showCommentAnalysisDialog] && (
+        <CommentAnalysisDialog
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) setShowCommentAnalysisDialog(null);
+          }}
+          issueKey={showCommentAnalysisDialog}
+          issueTitle={
+            Object.values(userIssues)
+              .flat()
+              .find(issue => issue.key === showCommentAnalysisDialog)?.fields.summary || ''
+          }
+          analysis={commentsAnalysis[showCommentAnalysisDialog]}
         />
       )}
     </div>

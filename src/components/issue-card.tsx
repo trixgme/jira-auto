@@ -2,12 +2,13 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MessageCircle, Sparkles, Loader2 } from 'lucide-react';
+import { MessageCircle, Sparkles, Loader2, MessageSquare } from 'lucide-react';
 import { DifficultyBadge } from '@/components/difficulty-badge';
 import { DifficultyDialog } from '@/components/difficulty-dialog';
+import { CommentAnalysisDialog } from '@/components/comment-analysis-dialog';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
-import type { JiraIssue, IssueDifficulty } from '@/lib/types';
+import type { JiraIssue, IssueDifficulty, CommentAnalysis } from '@/lib/types';
 import { DifficultyCache } from '@/lib/difficulty-cache';
 
 interface IssueCardProps {
@@ -21,6 +22,9 @@ export function IssueCard({ issue, onDifficultyAnalyzed }: IssueCardProps) {
     return issue.difficulty || DifficultyCache.get(issue.key) || undefined;
   });
   const [showDifficultyDialog, setShowDifficultyDialog] = useState(false);
+  const [isAnalyzingComments, setIsAnalyzingComments] = useState(false);
+  const [commentAnalysis, setCommentAnalysis] = useState<CommentAnalysis | null>(null);
+  const [showCommentAnalysisDialog, setShowCommentAnalysisDialog] = useState(false);
   const getStatusColor = (statusCategory: string) => {
     switch (statusCategory.toLowerCase()) {
       case 'done':
@@ -109,6 +113,41 @@ export function IssueCard({ issue, onDifficultyAnalyzed }: IssueCardProps) {
     }
   };
 
+  const analyzeComments = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsAnalyzingComments(true);
+    
+    try {
+      const response = await fetch('/api/ai/analyze-comments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          issueKey: issue.key,
+          issueTitle: issue.fields.summary,
+          issueDescription: issue.fields.description,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const analysis = { ...result, analyzedAt: new Date() };
+        setCommentAnalysis(analysis);
+        setShowCommentAnalysisDialog(true);
+      } else {
+        const error = await response.json();
+        console.error('Comment analysis failed:', error);
+        alert(`댓글 분석 실패: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Failed to analyze comments:', error);
+      alert('댓글 분석 중 오류가 발생했습니다.');
+    } finally {
+      setIsAnalyzingComments(false);
+    }
+  };
+
   return (
     <>
       <Card 
@@ -132,33 +171,53 @@ export function IssueCard({ issue, onDifficultyAnalyzed }: IssueCardProps) {
             <Badge variant="outline" className="text-xs shrink-0">
               {issue.key}
             </Badge>
-            {difficulty ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowDifficultyDialog(true);
-                }}
-                className="h-6 p-0"
-              >
-                <DifficultyBadge difficulty={difficulty.difficulty} size="sm" />
-              </Button>
-            ) : (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={analyzeDifficulty}
-                disabled={isAnalyzing}
-                className="h-6 px-2"
-              >
-                {isAnalyzing ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <Sparkles className="h-3 w-3" />
-                )}
-              </Button>
-            )}
+            <div className="flex items-center gap-1">
+              {difficulty ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowDifficultyDialog(true);
+                  }}
+                  className="h-6 p-0"
+                >
+                  <DifficultyBadge difficulty={difficulty.difficulty} size="sm" />
+                </Button>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={analyzeDifficulty}
+                  disabled={isAnalyzing}
+                  className="h-6 px-2"
+                >
+                  {isAnalyzing ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3 w-3" />
+                  )}
+                </Button>
+              )}
+              
+              {/* 댓글 분석 버튼 - 댓글이 2개 이상일 때만 표시 */}
+              {issue.fields.comment && issue.fields.comment.total >= 2 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={analyzeComments}
+                  disabled={isAnalyzingComments}
+                  className="h-6 px-2"
+                  title="댓글 분석"
+                >
+                  {isAnalyzingComments ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <MessageSquare className="h-3 w-3" />
+                  )}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
         
@@ -198,6 +257,14 @@ export function IssueCard({ issue, onDifficultyAnalyzed }: IssueCardProps) {
       issueKey={issue.key}
       issueTitle={issue.fields.summary}
       difficulty={difficulty || null}
+    />
+    
+    <CommentAnalysisDialog
+      open={showCommentAnalysisDialog}
+      onOpenChange={setShowCommentAnalysisDialog}
+      issueKey={issue.key}
+      issueTitle={issue.fields.summary}
+      analysis={commentAnalysis}
     />
     </>
   );

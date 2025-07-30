@@ -182,4 +182,46 @@ export class JiraClient {
 
     return response.json();
   }
+
+  async getIssueComments(issueKey: string) {
+    const url = `${this.config.cloudUrl}/rest/api/3/issue/${issueKey}/comment`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: this.headers,
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Failed to get comments: ${response.status} ${error}`);
+    }
+
+    const data = await response.json();
+    
+    // 댓글을 간단한 형태로 변환
+    return data.comments?.map((comment: any) => ({
+      id: comment.id,
+      author: comment.author?.displayName || 'Unknown',
+      body: this.extractTextFromContent(comment.body),
+      created: comment.created,
+      updated: comment.updated
+    })) || [];
+  }
+
+  private extractTextFromContent(content: any): string {
+    if (!content) return '';
+    
+    if (typeof content === 'string') return content;
+    
+    if (content.content && Array.isArray(content.content)) {
+      return content.content.map((item: any) => {
+        if (item.type === 'paragraph' && item.content) {
+          return item.content.map((textItem: any) => textItem.text || '').join('');
+        }
+        return '';
+      }).join('\n');
+    }
+    
+    return JSON.stringify(content);
+  }
 }
