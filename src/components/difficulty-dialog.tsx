@@ -78,49 +78,51 @@ export function DifficultyDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px] max-w-[95vw] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Brain className="h-5 w-5" />
             AI 난이도 분석 결과
           </DialogTitle>
-          <DialogDescription>
-            {issueKey} - {issueTitle}
+          <DialogDescription className="break-words">
+            <span className="font-mono text-xs">{issueKey}</span>
+            <span className="mx-2">-</span>
+            <span className="break-words">{issueTitle}</span>
           </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-4">
+        <div className="space-y-4 max-w-full">
           <div className="flex items-center justify-center py-4">
             <DifficultyBadge difficulty={difficulty.difficulty} size="lg" />
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div>
               <h4 className="text-sm font-semibold mb-2">난이도 설명</h4>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground break-words">
                 {getDifficultyDescription(difficulty.difficulty)}
               </p>
             </div>
 
             <div>
               <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                <AlertCircle className="h-4 w-4" />
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
                 AI 분석 근거 (English)
               </h4>
-              <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
-                {difficulty.reasoning}
-              </p>
+              <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md max-w-full overflow-hidden">
+                <p className="break-words whitespace-pre-wrap">{difficulty.reasoning}</p>
+              </div>
             </div>
 
             {difficulty.reasoningKo && (
               <div>
                 <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4" />
+                  <AlertCircle className="h-4 w-4 flex-shrink-0" />
                   AI 분석 근거 (한국어)
                 </h4>
-                <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
-                  {difficulty.reasoningKo}
-                </p>
+                <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md max-w-full overflow-hidden">
+                  <p className="break-words whitespace-pre-wrap">{difficulty.reasoningKo}</p>
+                </div>
               </div>
             )}
 
@@ -136,31 +138,31 @@ export function DifficultyDialog({
 
             <div>
               <h4 className="text-sm font-semibold mb-2">권장 사항</h4>
-              <ul className="text-sm text-muted-foreground space-y-1">
+              <ul className="text-sm text-muted-foreground space-y-2">
                 {getRecommendations(difficulty.difficulty).map((rec, index) => (
-                  <li key={index} className="flex items-start">
-                    <span className="mr-2">•</span>
-                    <span>{rec}</span>
+                  <li key={index} className="flex items-start gap-2">
+                    <span className="text-primary mt-1 flex-shrink-0">•</span>
+                    <span className="break-words">{rec}</span>
                   </li>
                 ))}
               </ul>
             </div>
 
             {difficulty.commentAdded !== undefined && (
-              <div className={`flex items-center gap-2 p-3 rounded-md ${
+              <div className={`flex items-start gap-2 p-3 rounded-md ${
                 difficulty.commentAdded ? 'bg-green-50 dark:bg-green-900/20' : 'bg-yellow-50 dark:bg-yellow-900/20'
               }`}>
                 {difficulty.commentAdded ? (
                   <>
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <span className="text-sm text-green-700 dark:text-green-400">
+                    <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm text-green-700 dark:text-green-400 break-words">
                       Jira 이슈에 분석 결과가 댓글로 추가되었습니다
                     </span>
                   </>
                 ) : (
                   <>
-                    <XCircle className="h-4 w-4 text-yellow-600" />
-                    <span className="text-sm text-yellow-700 dark:text-yellow-400">
+                    <XCircle className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm text-yellow-700 dark:text-yellow-400 break-words">
                       Jira 댓글 추가 실패 (수동으로 복사해서 사용하세요)
                     </span>
                   </>
