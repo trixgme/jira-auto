@@ -134,7 +134,7 @@ Respond with ONLY a JSON object in this format:
         messages: [
           {
             role: "system",
-            content: "You are an expert project manager and communication analyst who evaluates team collaboration quality based on issue comments.",
+            content: "You are an expert project manager and communication analyst who evaluates team collaboration quality based on issue comments. Always respond with valid JSON only.",
           },
           {
             role: "user",
@@ -169,20 +169,59 @@ Respond with ONLY a JSON object in this format:
     console.log("AI Response Content:", content);
     
     try {
-      const result = JSON.parse(content);
+      // JSON 응답에서 코드 블록이나 다른 텍스트 제거
+      let cleanContent = content.trim();
+      
+      // JSON 코드 블록이 있다면 제거
+      if (cleanContent.startsWith('```json')) {
+        cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+      } else if (cleanContent.startsWith('```')) {
+        cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
+      }
+      
+      const result = JSON.parse(cleanContent);
+      
+      // 필수 필드 검증 및 기본값 설정
+      const validatedResult = {
+        score: result.score || 5,
+        analysisKo: result.analysisKo || "분석을 완료할 수 없습니다.",
+        analysisEn: result.analysisEn || "Unable to complete analysis.",
+        isHardToDetermine: result.isHardToDetermine || false,
+        keyIssues: Array.isArray(result.keyIssues) ? result.keyIssues : [],
+        recommendations: Array.isArray(result.recommendations) ? result.recommendations : []
+      };
       
       // 점수 설명 추가
-      const scoreDescription = getScoreDescription(result.score);
-      result.scoreDescriptionKo = scoreDescription.ko;
-      result.scoreDescriptionEn = scoreDescription.en;
+      const scoreDescription = getScoreDescription(validatedResult.score);
+      const finalResult = {
+        ...validatedResult,
+        scoreDescriptionKo: scoreDescription.ko,
+        scoreDescriptionEn: scoreDescription.en
+      };
       
-      return NextResponse.json(result);
+      return NextResponse.json(finalResult);
     } catch (parseError) {
       console.error("Failed to parse OpenAI response:", content);
-      return NextResponse.json(
-        { error: "Invalid response format from AI" },
-        { status: 500 }
-      );
+      console.error("Parse error:", parseError);
+      
+      // 파싱 실패 시 기본 응답 반환
+      const fallbackResult = {
+        score: 5,
+        analysisKo: "AI 응답 파싱에 실패했습니다. 댓글을 수동으로 검토해주세요.",
+        analysisEn: "Failed to parse AI response. Please review comments manually.",
+        isHardToDetermine: true,
+        keyIssues: ["AI 분석 오류"],
+        recommendations: ["댓글을 수동으로 검토하고 팀과 직접 소통하세요"]
+      };
+      
+      const scoreDescription = getScoreDescription(fallbackResult.score);
+      const finalFallbackResult = {
+        ...fallbackResult,
+        scoreDescriptionKo: scoreDescription.ko,
+        scoreDescriptionEn: scoreDescription.en
+      };
+      
+      return NextResponse.json(finalFallbackResult);
     }
   } catch (error) {
     console.error("Error analyzing comments:", error);

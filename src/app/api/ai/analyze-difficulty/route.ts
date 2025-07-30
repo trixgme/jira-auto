@@ -126,7 +126,26 @@ Respond with ONLY a JSON object in this format:
     console.log("AI Response Content:", content);
     
     try {
-      const result = JSON.parse(content);
+      // JSON 응답에서 코드 블록이나 다른 텍스트 제거
+      let cleanContent = content.trim();
+      
+      // JSON 코드 블록이 있다면 제거
+      if (cleanContent.startsWith('```json')) {
+        cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+      } else if (cleanContent.startsWith('```')) {
+        cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
+      }
+      
+      const result = JSON.parse(cleanContent);
+      
+      // 필수 필드 검증 및 기본값 설정
+      const validatedResult = {
+        difficulty: result.difficulty || 3,
+        reasoning: result.reasoning || "분석을 완료할 수 없습니다.",
+        reasoningKo: result.reasoningKo || result.reasoning || "분석을 완료할 수 없습니다.",
+        estimatedHours: result.estimatedHours || 8,
+        commentAdded: false
+      };
       
       // Jira에 댓글 추가
       if (issueKey) {
@@ -134,35 +153,43 @@ Respond with ONLY a JSON object in this format:
           const jiraClient = new JiraClient();
           const commentText = `🤖 AI 난이도 분석 결과
 
-난이도: ${'⭐'.repeat(result.difficulty)} (${result.difficulty}/5)
-예상 소요 시간: ${result.estimatedHours}시간
+난이도: ${'⭐'.repeat(validatedResult.difficulty)} (${validatedResult.difficulty}/5)
+예상 소요 시간: ${validatedResult.estimatedHours}시간
 
 📊 분석 근거 (English):
-${result.reasoning}
+${validatedResult.reasoning}
 
 📊 분석 근거 (한국어):
-${result.reasoningKo || result.reasoning}
+${validatedResult.reasoningKo}
 
 난이도 설명:
-${getDifficultyDescription(result.difficulty)}
+${getDifficultyDescription(validatedResult.difficulty)}
 
 _이 댓글은 AI에 의해 자동으로 생성되었습니다._`;
           
           await jiraClient.addComment(issueKey, commentText);
-          result.commentAdded = true;
+          validatedResult.commentAdded = true;
         } catch (commentError) {
           console.error("Failed to add comment to Jira:", commentError);
-          result.commentAdded = false;
+          validatedResult.commentAdded = false;
         }
       }
       
-      return NextResponse.json(result);
+      return NextResponse.json(validatedResult);
     } catch (parseError) {
       console.error("Failed to parse OpenAI response:", content);
-      return NextResponse.json(
-        { error: "Invalid response format from AI" },
-        { status: 500 }
-      );
+      console.error("Parse error:", parseError);
+      
+      // 파싱 실패 시 기본 응답 반환
+      const fallbackResult = {
+        difficulty: 3,
+        reasoning: "Failed to parse AI response. Please review the issue manually.",
+        reasoningKo: "AI 응답 파싱에 실패했습니다. 이슈를 수동으로 검토해주세요.",
+        estimatedHours: 8,
+        commentAdded: false
+      };
+      
+      return NextResponse.json(fallbackResult);
     }
   } catch (error) {
     console.error("Error analyzing difficulty:", error);
