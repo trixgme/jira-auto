@@ -9,8 +9,12 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { Navigation } from '@/components/navigation';
 import { LoadingProgress } from '@/components/loading-progress';
 import { LogoutButton } from '@/components/logout-button';
-import { Users, Bug, CheckCircle, Clock, TrendingUp, ChevronUp, ChevronDown, ChevronsUpDown, ExternalLink, Star } from 'lucide-react';
-import type { JiraIssue, JiraProject } from '@/lib/types';
+import { Users, Bug, CheckCircle, Clock, TrendingUp, ChevronUp, ChevronDown, ChevronsUpDown, ExternalLink, Star, Sparkles, Loader2 } from 'lucide-react';
+import type { JiraIssue, JiraProject, IssueDifficulty } from '@/lib/types';
+import { DifficultyBadge } from '@/components/difficulty-badge';
+import { DifficultyDialog } from '@/components/difficulty-dialog';
+import { Button } from '@/components/ui/button';
+import { DifficultyCache } from '@/lib/difficulty-cache';
 
 interface UserKpi {
   user: string;
@@ -53,6 +57,14 @@ export function KpiDashboard() {
   const [jiraCloudUrl, setJiraCloudUrl] = useState<string>('');
   const [favoriteUsers, setFavoriteUsers] = useState<Set<string>>(new Set());
   const [selectedUserFilter, setSelectedUserFilter] = useState<'all' | 'todo' | 'completed'>('all');
+  const [analyzingIssues, setAnalyzingIssues] = useState<Set<string>>(new Set());
+  const [issuesDifficulty, setIssuesDifficulty] = useState<Record<string, IssueDifficulty>>(() => {
+    if (typeof window !== 'undefined') {
+      return DifficultyCache.getAll();
+    }
+    return {};
+  });
+  const [showDifficultyDialog, setShowDifficultyDialog] = useState<string | null>(null);
 
   useEffect(() => {
     loadFavoriteUsers();
@@ -312,6 +324,57 @@ export function KpiDashboard() {
 
   const getFilteredIssuesCount = (issues: JiraIssue[], filter: 'all' | 'todo' | 'completed') => {
     return filterUserIssues(issues, filter).length;
+  };
+
+  const analyzeDifficulty = async (issue: JiraIssue) => {
+    const issueKey = issue.key;
+    setAnalyzingIssues(prev => new Set(prev).add(issueKey));
+    
+    try {
+      const response = await fetch('/api/ai/analyze-difficulty', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: issue.fields.summary,
+          description: issue.fields.description,
+          issueType: issue.fields.issuetype?.name,
+          labels: issue.fields.labels,
+          issueKey: issue.key,
+          priority: issue.fields.priority?.name,
+          components: issue.fields.components?.map(c => c.name),
+          fixVersions: issue.fields.fixVersions?.map(v => v.name),
+          commentCount: issue.fields.comment?.total,
+          storyPoints: issue.fields.customfield_10016,
+          timeEstimate: issue.fields.timetracking?.originalEstimate,
+          status: issue.fields.status.name,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const newDifficulty = { ...result, analyzedAt: new Date() };
+        setIssuesDifficulty(prev => ({
+          ...prev,
+          [issueKey]: newDifficulty
+        }));
+        DifficultyCache.set(issueKey, newDifficulty);
+        setShowDifficultyDialog(issueKey);
+      } else {
+        const error = await response.json();
+        console.error('AI analysis failed:', error);
+        alert(`AI 분석 실패: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Failed to analyze difficulty:', error);
+    } finally {
+      setAnalyzingIssues(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(issueKey);
+        return newSet;
+      });
+    }
   };
 
   if (data.error) {
@@ -630,24 +693,25 @@ export function KpiDashboard() {
                                   return filteredIssues.map((issue) => {
                                     const isResolved = issue.fields.status.statusCategory?.key === 'done' || 
                                       ['Done', 'Resolved', 'Closed', 'Complete', 'Fixed'].includes(issue.fields.status.name);
+                                    const difficulty = issuesDifficulty[issue.key];
+                                    const isAnalyzing = analyzingIssues.has(issue.key);
                                     
                                     return (
-                                    <a
-                                      key={issue.id}
-                                      href={getJiraIssueUrl(issue.key)}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className={`block border rounded-lg p-4 hover:bg-muted/50 hover:border-primary/50 transition-all group ${
-                                        jiraCloudUrl ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
-                                      }`}
-                                      onClick={(e) => {
-                                        if (!jiraCloudUrl) {
-                                          e.preventDefault();
-                                        }
-                                      }}
-                                    >
+                                    <div key={issue.id} className="border rounded-lg p-4 hover:bg-muted/50 hover:border-primary/50 transition-all group">
                                       <div className="flex items-start justify-between gap-3">
-                                        <div className="flex-1 min-w-0">
+                                        <a
+                                          href={getJiraIssueUrl(issue.key)}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className={`flex-1 min-w-0 ${
+                                            jiraCloudUrl ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
+                                          }`}
+                                          onClick={(e) => {
+                                            if (!jiraCloudUrl) {
+                                              e.preventDefault();
+                                            }
+                                          }}
+                                        >
                                           <div className="flex items-center gap-2 mb-2">
                                             <Badge variant="outline" className="text-xs group-hover:border-primary/50">
                                               {issue.key}
@@ -665,6 +729,9 @@ export function KpiDashboard() {
                                               <Badge variant="secondary" className="text-xs">
                                                 {issue.fields.priority.name}
                                               </Badge>
+                                            )}
+                                            {difficulty && (
+                                              <DifficultyBadge difficulty={difficulty.difficulty} size="sm" />
                                             )}
                                           </div>
                                           <h4 
@@ -690,12 +757,61 @@ export function KpiDashboard() {
                                               완료일: {new Date(issue.fields.resolutiondate).toLocaleDateString('ko-KR')}
                                             </div>
                                           )}
-                                        </div>
-                                        <div className="flex-shrink-0">
-                                          <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                                          {difficulty && (
+                                            <div className="text-xs text-muted-foreground">
+                                              예상 {difficulty.estimatedHours}시간
+                                            </div>
+                                          )}
+                                        </a>
+                                        
+                                        <div className="flex flex-col gap-2 flex-shrink-0">
+                                          <a
+                                            href={getJiraIssueUrl(issue.key)}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className={jiraCloudUrl ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}
+                                            onClick={(e) => {
+                                              if (!jiraCloudUrl) {
+                                                e.preventDefault();
+                                              }
+                                            }}
+                                          >
+                                            <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                                          </a>
+                                          
+                                          {difficulty ? (
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setShowDifficultyDialog(issue.key);
+                                              }}
+                                              className="h-6 p-0"
+                                            >
+                                              <DifficultyBadge difficulty={difficulty.difficulty} size="sm" />
+                                            </Button>
+                                          ) : (
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                analyzeDifficulty(issue);
+                                              }}
+                                              disabled={isAnalyzing}
+                                              className="h-6 px-2"
+                                            >
+                                              {isAnalyzing ? (
+                                                <Loader2 className="h-3 w-3 animate-spin" />
+                                              ) : (
+                                                <Sparkles className="h-3 w-3" />
+                                              )}
+                                            </Button>
+                                          )}
                                         </div>
                                       </div>
-                                    </a>
+                                    </div>
                                     );
                                   });
                                 })()}
@@ -751,6 +867,23 @@ export function KpiDashboard() {
           )}
         </CardContent>
       </Card>
+      
+      {/* AI 난이도 분석 다이얼로그 */}
+      {showDifficultyDialog && issuesDifficulty[showDifficultyDialog] && (
+        <DifficultyDialog
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) setShowDifficultyDialog(null);
+          }}
+          issueKey={showDifficultyDialog}
+          issueTitle={
+            Object.values(userIssues)
+              .flat()
+              .find(issue => issue.key === showDifficultyDialog)?.fields.summary || ''
+          }
+          difficulty={issuesDifficulty[showDifficultyDialog]}
+        />
+      )}
     </div>
   );
 }

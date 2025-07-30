@@ -11,6 +11,15 @@ export interface JiraProject {
   projectTypeKey?: string;
 }
 
+export interface IssueDifficulty {
+  difficulty: number;
+  reasoning: string;
+  reasoningKo: string;
+  estimatedHours: number;
+  analyzedAt?: Date;
+  commentAdded?: boolean;
+}
+
 export interface JiraIssue {
   id: string;
   key: string;
@@ -45,5 +54,24 @@ export interface JiraIssue {
       displayName: string;
       emailAddress: string;
     };
+    description?: string;
+    issuetype?: {
+      name: string;
+      iconUrl: string;
+    };
+    labels?: string[];
+    components?: Array<{
+      name: string;
+    }>;
+    fixVersions?: Array<{
+      name: string;
+    }>;
+    timetracking?: {
+      originalEstimate?: string;
+      remainingEstimate?: string;
+      timeSpent?: string;
+    };
+    customfield_10016?: number; // Story points
   };
+  difficulty?: IssueDifficulty;
 }

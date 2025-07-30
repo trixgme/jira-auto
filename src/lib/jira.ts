@@ -77,7 +77,7 @@ export class JiraClient {
       jql,
       startAt: startAt.toString(),
       maxResults: maxResults.toString(),
-      fields: 'summary,status,project,created,updated,resolutiondate,assignee,priority,comment,reporter',
+      fields: 'summary,status,project,created,updated,resolutiondate,assignee,priority,comment,reporter,description,issuetype,labels,components,fixVersions,timetracking,customfield_10016',
     });
 
     const response = await fetch(`${url}?${params}`, {
@@ -140,6 +140,44 @@ export class JiraClient {
 
     if (!response.ok) {
       throw new Error(`Jira API error: ${response.status} ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  async addComment(issueKey: string, comment: string) {
+    const url = `${this.config.cloudUrl}/rest/api/3/issue/${issueKey}/comment`;
+    
+    const body = {
+      body: {
+        type: "doc",
+        version: 1,
+        content: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                type: "text",
+                text: comment
+              }
+            ]
+          }
+        ]
+      }
+    };
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        ...this.headers,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Failed to add comment: ${response.status} ${error}`);
     }
 
     return response.json();

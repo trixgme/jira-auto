@@ -13,7 +13,8 @@ import { Navigation } from '@/components/navigation';
 import { LogoutButton } from '@/components/logout-button';
 import { Search, X } from 'lucide-react';
 import { LoadingProgress } from '@/components/loading-progress';
-import type { JiraIssue, JiraProject } from '@/lib/types';
+import type { JiraIssue, JiraProject, IssueDifficulty } from '@/lib/types';
+import { DifficultyCache } from '@/lib/difficulty-cache';
 
 interface DashboardData {
   newIssues: JiraIssue[];
@@ -38,6 +39,12 @@ export function Dashboard() {
   const [activeSearchQuery, setActiveSearchQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [loadingStep, setLoadingStep] = useState(0);
+  const [issuesDifficulty, setIssuesDifficulty] = useState<Record<string, IssueDifficulty>>(() => {
+    if (typeof window !== 'undefined') {
+      return DifficultyCache.getAll();
+    }
+    return {};
+  });
 
   useEffect(() => {
     fetchProjects();
@@ -133,6 +140,21 @@ export function Dashboard() {
 
   const filteredNewIssues = filterIssues(data.newIssues);
   const filteredCompletedIssues = filterIssues(data.completedIssues);
+
+  const handleDifficultyAnalyzed = useCallback((issueKey: string, difficulty: IssueDifficulty) => {
+    setIssuesDifficulty(prev => ({
+      ...prev,
+      [issueKey]: difficulty
+    }));
+    DifficultyCache.set(issueKey, difficulty);
+  }, []);
+
+  const enhanceIssueWithDifficulty = useCallback((issue: JiraIssue): JiraIssue => {
+    return {
+      ...issue,
+      difficulty: issuesDifficulty[issue.key]
+    };
+  }, [issuesDifficulty]);
 
   const loadingSteps = [
     '프로젝트 정보 조회 중...',
@@ -314,7 +336,11 @@ export function Dashboard() {
                 </p>
               ) : (
                 filteredNewIssues.map((issue) => (
-                  <IssueCard key={issue.id} issue={issue} />
+                  <IssueCard 
+                    key={issue.id} 
+                    issue={enhanceIssueWithDifficulty(issue)}
+                    onDifficultyAnalyzed={handleDifficultyAnalyzed}
+                  />
                 ))
               )}
             </div>
@@ -346,7 +372,11 @@ export function Dashboard() {
                 </p>
               ) : (
                 filteredCompletedIssues.map((issue) => (
-                  <IssueCard key={issue.id} issue={issue} />
+                  <IssueCard 
+                    key={issue.id} 
+                    issue={enhanceIssueWithDifficulty(issue)}
+                    onDifficultyAnalyzed={handleDifficultyAnalyzed}
+                  />
                 ))
               )}
             </div>
