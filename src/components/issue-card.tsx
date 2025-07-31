@@ -63,6 +63,43 @@ export function IssueCard({ issue, onDifficultyAnalyzed }: IssueCardProps) {
     });
   };
 
+  const isCompleted = () => {
+    return issue.fields.status.statusCategory?.key === 'done' || 
+           ['Done', 'Resolved', 'Closed', 'Complete', 'Fixed'].includes(issue.fields.status.name);
+  };
+
+  const getCompletionInfo = () => {
+    if (!isCompleted() || !issue.fields.resolutiondate) return null;
+    
+    const createdDate = new Date(issue.fields.created);
+    const completedDate = new Date(issue.fields.resolutiondate);
+    const diffTime = completedDate.getTime() - createdDate.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    // 소요시간을 더 사용자 친화적으로 표시
+    const getDurationText = (days: number) => {
+      if (days === 0) return '당일';
+      if (days === 1) return '1일';
+      if (days < 7) return `${days}일`;
+      if (days < 30) {
+        const weeks = Math.floor(days / 7);
+        const remainingDays = days % 7;
+        if (remainingDays === 0) return `${weeks}주`;
+        return `${weeks}주 ${remainingDays}일`;
+      }
+      const months = Math.floor(days / 30);
+      const remainingDays = days % 30;
+      if (remainingDays === 0) return `${months}개월`;
+      return `${months}개월 ${remainingDays}일`;
+    };
+    
+    return {
+      completedDate: completedDate.toLocaleDateString('ko-KR'),
+      daysTaken: diffDays,
+      durationText: getDurationText(diffDays)
+    };
+  };
+
   const handleCardClick = () => {
     const jiraUrl = 'https://gmeremit-team.atlassian.net';
     const issueUrl = `${jiraUrl}/browse/${issue.key}`;
@@ -237,16 +274,35 @@ export function IssueCard({ issue, onDifficultyAnalyzed }: IssueCardProps) {
           </div>
         </div>
         
-        <div className="flex flex-col sm:flex-row sm:justify-between text-[10px] sm:text-xs text-muted-foreground gap-1">
-          <span>생성: {new Date(issue.fields.created).toLocaleDateString('ko-KR')}</span>
-          <div className="flex items-center gap-1 sm:gap-2">
-            {difficulty && (
-              <span className="text-[10px] sm:text-xs">예상 {difficulty.estimatedHours}시간</span>
-            )}
-            {issue.fields.assignee && (
-              <span className="truncate">{issue.fields.assignee.displayName}</span>
-            )}
+        <div className="flex flex-col text-[10px] sm:text-xs text-muted-foreground gap-1">
+          <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+            <span>생성: {new Date(issue.fields.created).toLocaleDateString('ko-KR')}</span>
+            <div className="flex items-center gap-1 sm:gap-2">
+              {difficulty && (
+                <span className="text-[10px] sm:text-xs">예상 {difficulty.estimatedHours}시간</span>
+              )}
+              {issue.fields.assignee && (
+                <span className="truncate">{issue.fields.assignee.displayName}</span>
+              )}
+            </div>
           </div>
+          
+          {(() => {
+            const completionInfo = getCompletionInfo();
+            if (completionInfo) {
+              return (
+                <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+                  <span className="text-green-600 font-medium">
+                    완료: {completionInfo.completedDate}
+                  </span>
+                  <span className="text-blue-600 font-medium">
+                    소요시간: {completionInfo.durationText}
+                  </span>
+                </div>
+              );
+            }
+            return null;
+          })()}
         </div>
       </CardContent>
     </Card>

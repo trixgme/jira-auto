@@ -5,24 +5,30 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const month = searchParams.get('month');
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
     
     const jiraClient = new JiraClient();
     
     let jql: string;
     
-    if (month) {
+    if (startDate && endDate) {
+      // 날짜 범위로 조회
+      jql = `created >= "${startDate}" AND created <= "${endDate} 23:59" ORDER BY created DESC`;
+      console.log(`날짜 범위 이슈를 가져오는 중... (${startDate} ~ ${endDate})`);
+    } else if (month) {
       // 특정 월의 이슈를 가져오는 JQL
       const currentYear = new Date().getFullYear();
       const monthNum = parseInt(month);
-      const startDate = `${currentYear}-${monthNum.toString().padStart(2, '0')}-01`;
+      const monthStartDate = `${currentYear}-${monthNum.toString().padStart(2, '0')}-01`;
       
       // 다음 달의 첫날 계산
       const nextMonth = monthNum === 12 ? 1 : monthNum + 1;
       const nextYear = monthNum === 12 ? currentYear + 1 : currentYear;
-      const endDate = `${nextYear}-${nextMonth.toString().padStart(2, '0')}-01`;
+      const monthEndDate = `${nextYear}-${nextMonth.toString().padStart(2, '0')}-01`;
       
-      jql = `created >= "${startDate}" AND created < "${endDate}" ORDER BY created DESC`;
-      console.log(`${monthNum}월 이슈를 가져오는 중... (${startDate} ~ ${endDate})`);
+      jql = `created >= "${monthStartDate}" AND created < "${monthEndDate}" ORDER BY created DESC`;
+      console.log(`${monthNum}월 이슈를 가져오는 중... (${monthStartDate} ~ ${monthEndDate})`);
     } else {
       // 모든 이슈를 가져오는 JQL (최근 1년간)
       jql = `created >= -365d ORDER BY created DESC`;
@@ -36,7 +42,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ 
       issues,
       total: issues.length,
-      month: month ? parseInt(month) : null
+      month: month ? parseInt(month) : null,
+      dateRange: startDate && endDate ? { startDate, endDate } : null
     });
   } catch (error) {
     console.error('Error fetching all issues:', error);

@@ -8,9 +8,13 @@ interface IssuesChartProps {
   newIssues: JiraIssue[];
   completedIssues: JiraIssue[];
   daysBack: number;
+  dateRange?: {
+    startDate: Date | null;
+    endDate: Date | null;
+  };
 }
 
-export function IssuesChart({ newIssues, completedIssues, daysBack }: IssuesChartProps) {
+export function IssuesChart({ newIssues, completedIssues, daysBack, dateRange }: IssuesChartProps) {
   const getDateRange = (days: number) => {
     const dates = [];
     const today = new Date();
@@ -24,14 +28,26 @@ export function IssuesChart({ newIssues, completedIssues, daysBack }: IssuesChar
     return dates;
   };
 
-  const formatDate = (date: Date) => {
-    if (daysBack === 1) {
+  const getDateRangeFromSelection = (startDate: Date, endDate: Date) => {
+    const dates = [];
+    const current = new Date(startDate);
+    
+    while (current <= endDate) {
+      dates.push(new Date(current));
+      current.setDate(current.getDate() + 1);
+    }
+    
+    return dates;
+  };
+
+  const formatDate = (date: Date, totalDays: number) => {
+    if (totalDays === 1) {
       return date.toLocaleDateString('ko-KR', { 
         month: 'short', 
         day: 'numeric',
         hour: '2-digit'
       });
-    } else if (daysBack <= 7) {
+    } else if (totalDays <= 7) {
       return date.toLocaleDateString('ko-KR', { 
         month: 'short', 
         day: 'numeric' 
@@ -44,26 +60,40 @@ export function IssuesChart({ newIssues, completedIssues, daysBack }: IssuesChar
     }
   };
 
-  const countIssuesByDate = (issues: JiraIssue[], dateField: 'created' | 'updated') => {
+  const countIssuesByDate = (issues: JiraIssue[], dateField: 'created' | 'updated' | 'resolutiondate') => {
     const counts: Record<string, number> = {};
     
     issues.forEach(issue => {
-      const date = new Date(issue.fields[dateField]);
-      const dateKey = date.toDateString();
-      counts[dateKey] = (counts[dateKey] || 0) + 1;
+      let dateValue;
+      if (dateField === 'resolutiondate') {
+        dateValue = issue.fields.resolutiondate;
+      } else {
+        dateValue = issue.fields[dateField];
+      }
+      
+      if (dateValue) {
+        const date = new Date(dateValue);
+        const dateKey = date.toDateString();
+        counts[dateKey] = (counts[dateKey] || 0) + 1;
+      }
     });
     
     return counts;
   };
 
-  const dateRange = getDateRange(daysBack);
+  // 날짜 범위 결정
+  const dateList = dateRange && dateRange.startDate && dateRange.endDate
+    ? getDateRangeFromSelection(dateRange.startDate, dateRange.endDate)
+    : getDateRange(daysBack);
+  
+  const totalDays = dateList.length;
   const newIssueCounts = countIssuesByDate(newIssues, 'created');
-  const completedIssueCounts = countIssuesByDate(completedIssues, 'updated');
+  const completedIssueCounts = countIssuesByDate(completedIssues, 'resolutiondate');
 
-  const chartData = dateRange.map(date => {
+  const chartData = dateList.map(date => {
     const dateKey = date.toDateString();
     return {
-      date: formatDate(date),
+      date: formatDate(date, totalDays),
       fullDate: date.toLocaleDateString('ko-KR'),
       새로운_이슈: newIssueCounts[dateKey] || 0,
       완료된_이슈: completedIssueCounts[dateKey] || 0,
@@ -88,7 +118,10 @@ export function IssuesChart({ newIssues, completedIssues, daysBack }: IssuesChar
           </div>
         </CardTitle>
         <CardDescription>
-          최근 {daysBack === 1 ? '오늘' : `${daysBack}일간`} 이슈 생성 및 완료 현황
+          {dateRange && dateRange.startDate && dateRange.endDate
+            ? `${dateRange.startDate.toLocaleDateString('ko-KR')} ~ ${dateRange.endDate.toLocaleDateString('ko-KR')} 이슈 생성 및 완료 현황`
+            : `최근 ${daysBack === 1 ? '오늘' : `${daysBack}일간`} 이슈 생성 및 완료 현황`
+          }
         </CardDescription>
       </CardHeader>
       <CardContent>

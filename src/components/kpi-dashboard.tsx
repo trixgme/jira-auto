@@ -9,6 +9,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { Navigation } from '@/components/navigation';
 import { LoadingProgress } from '@/components/loading-progress';
 import { LogoutButton } from '@/components/logout-button';
+import { DateRangePicker } from '@/components/date-range-picker';
 import { Users, Bug, CheckCircle, Clock, TrendingUp, ChevronUp, ChevronDown, ChevronsUpDown, ExternalLink, Star, Sparkles, Loader2, MessageSquare } from 'lucide-react';
 import type { JiraIssue, JiraProject, IssueDifficulty, CommentAnalysis } from '@/lib/types';
 import { DifficultyBadge } from '@/components/difficulty-badge';
@@ -49,6 +50,10 @@ export function KpiDashboard() {
   });
 
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // 현재 월로 초기화
+  const [dateRange, setDateRange] = useState<{startDate: Date | null; endDate: Date | null}>({
+    startDate: null,
+    endDate: null
+  });
   const [loadingStep, setLoadingStep] = useState(0);
   const [sortConfig, setSortConfig] = useState<{
     key: keyof UserKpi | 'resolutionRate';
@@ -74,7 +79,7 @@ export function KpiDashboard() {
     loadFavoriteUsers();
     fetchJiraConfig();
     fetchKpiData();
-  }, [selectedMonth]);
+  }, [selectedMonth, dateRange]);
 
   const loadFavoriteUsers = () => {
     try {
@@ -133,14 +138,60 @@ export function KpiDashboard() {
       const projectsData = await projectsRes.json();
 
       setLoadingStep(2); // 이슈 데이터 조회 중
-      const allIssuesRes = await fetch(`/api/jira/all-issues?month=${selectedMonth}`);
+      
+      // 날짜 범위 파라미터 생성 (KST 기준)
+      let queryParams = '';
+      if (dateRange.startDate && dateRange.endDate) {
+        const getKSTDateString = (date: Date) => {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        };
+        
+        const startDateStr = getKSTDateString(dateRange.startDate);
+        const endDateStr = getKSTDateString(dateRange.endDate);
+        console.log(`KPI 날짜 범위 API 호출: ${startDateStr} ~ ${endDateStr}`);
+        queryParams = `startDate=${startDateStr}&endDate=${endDateStr}`;
+      } else {
+        queryParams = `month=${selectedMonth}`;
+      }
+      
+      const allIssuesRes = await fetch(`/api/jira/all-issues?${queryParams}`);
       
       if (!allIssuesRes.ok) {
         throw new Error('Failed to fetch issues');
       }
       
       const allIssuesData = await allIssuesRes.json();
-      const issues: JiraIssue[] = allIssuesData.issues || [];
+      let issues: JiraIssue[] = allIssuesData.issues || [];
+
+      // 날짜 범위 선택 시 클라이언트 측 추가 필터링 (시간대 보정)
+      if (dateRange.startDate && dateRange.endDate) {
+        const getKSTDateString = (date: Date) => {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        };
+        
+        const startDateStr = getKSTDateString(dateRange.startDate);
+        const endDateStr = getKSTDateString(dateRange.endDate);
+        console.log(`KPI 날짜 범위 클라이언트 필터링: ${startDateStr} ~ ${endDateStr}`);
+        
+        // 생성일 기준으로 필터링
+        issues = issues.filter((issue: JiraIssue) => {
+          const createdDate = new Date(issue.fields.created);
+          const createdDateStr = getKSTDateString(createdDate);
+          const isInRange = createdDateStr >= startDateStr && createdDateStr <= endDateStr;
+          if (!isInRange) {
+            console.log(`KPI 이슈 ${issue.key} 제외: 생성일 ${createdDateStr}이 범위 ${startDateStr}~${endDateStr} 밖`);
+          }
+          return isInRange;
+        });
+        
+        console.log(`KPI 날짜 범위 클라이언트 필터링 후: ${issues.length}개`);
+      }
 
       setLoadingStep(3); // KPI 데이터 계산 중
       
@@ -470,19 +521,37 @@ export function KpiDashboard() {
             개발팀의 업무 진행 상황을 정량적으로 추적합니다.
           </p>
           
-          {/* 월 선택 버튼 */}
-          <div className="flex flex-wrap gap-2">
-            <span className="text-sm text-muted-foreground flex items-center mr-2">월 선택:</span>
-            {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
-              <Badge
-                key={month}
-                variant={selectedMonth === month ? 'default' : 'outline'}
-                className="cursor-pointer"
-                onClick={() => setSelectedMonth(month)}
-              >
-                {month}월
-              </Badge>
-            ))}
+          {/* 날짜 선택 */}
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+            <div className="flex flex-wrap gap-2">
+              <span className="text-sm text-muted-foreground flex items-center mr-2">빠른 선택:</span>
+              {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+                <Badge
+                  key={month}
+                  variant={selectedMonth === month && !dateRange.startDate && !dateRange.endDate ? 'default' : 'outline'}
+                  className="cursor-pointer"
+                  onClick={() => {
+                    setSelectedMonth(month);
+                    setDateRange({ startDate: null, endDate: null });
+                  }}
+                >
+                  {month}월
+                </Badge>
+              ))}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">또는</span>
+              <DateRangePicker
+                value={dateRange}
+                onChange={(range) => {
+                  setDateRange(range);
+                  if (range.startDate && range.endDate) {
+                    setSelectedMonth(0); // 사용자 정의 범위일 때는 월 선택 비활성화
+                  }
+                }}
+                className="w-64"
+              />
+            </div>
           </div>
 
           {/* 즐겨찾기 안내 */}
@@ -518,7 +587,10 @@ export function KpiDashboard() {
               {data.loading ? <Skeleton className="h-8 w-16" /> : data.totalIssues}
             </div>
             <p className="text-xs text-muted-foreground">
-              {selectedMonth}월 생성
+              {dateRange.startDate && dateRange.endDate 
+                ? `${dateRange.startDate.toLocaleDateString('ko-KR')} ~ ${dateRange.endDate.toLocaleDateString('ko-KR')} 생성`
+                : `${selectedMonth}월 생성`
+              }
             </p>
           </CardContent>
         </Card>
@@ -571,10 +643,16 @@ export function KpiDashboard() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
-            사용자별 KPI ({selectedMonth}월)
+            사용자별 KPI ({dateRange.startDate && dateRange.endDate 
+              ? `${dateRange.startDate.toLocaleDateString('ko-KR')} ~ ${dateRange.endDate.toLocaleDateString('ko-KR')}`
+              : `${selectedMonth}월`
+            })
           </CardTitle>
           <CardDescription>
-            {selectedMonth}월에 생성된 이슈 기준으로 각 사용자의 할당, 해결, 미해결 현황 및 평균 해결 시간
+            {dateRange.startDate && dateRange.endDate 
+              ? `${dateRange.startDate.toLocaleDateString('ko-KR')} ~ ${dateRange.endDate.toLocaleDateString('ko-KR')} 기간에 생성된 이슈 기준으로`
+              : `${selectedMonth}월에 생성된 이슈 기준으로`
+            } 각 사용자의 할당, 해결, 미해결 현황 및 평균 해결 시간
           </CardDescription>
         </CardHeader>
         <CardContent>

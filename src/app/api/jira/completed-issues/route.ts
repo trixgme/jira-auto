@@ -6,14 +6,25 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const daysBack = parseInt(searchParams.get('days') || '7');
     const projectKey = searchParams.get('project') || undefined;
+    const startDate = searchParams.get('startDate') || undefined;
+    const endDate = searchParams.get('endDate') || undefined;
     
     const jiraClient = new JiraClient();
-    const issues = await jiraClient.getRecentlyCompletedIssues(daysBack, projectKey);
+    
+    let issues;
+    if (startDate && endDate) {
+      // 날짜 범위로 조회
+      issues = await jiraClient.getRecentlyCompletedIssuesByDateRange(startDate, endDate, projectKey);
+    } else {
+      // 기존 방식 (days 기준)
+      issues = await jiraClient.getRecentlyCompletedIssues(daysBack, projectKey);
+    }
     
     return NextResponse.json({
       issues,
       count: issues.length,
-      daysBack,
+      daysBack: startDate && endDate ? undefined : daysBack,
+      dateRange: startDate && endDate ? { startDate, endDate } : undefined,
     });
   } catch (error) {
     console.error('Error fetching completed issues:', error);

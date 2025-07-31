@@ -113,7 +113,21 @@ export class JiraClient {
   }
 
   async getRecentlyCreatedIssues(daysBack = 7, projectKey?: string): Promise<JiraIssue[]> {
-    let jql = `created >= -${daysBack}d`;
+    let jql: string;
+    
+    if (daysBack === 1) {
+      // "오늘"을 선택한 경우 - 정확히 오늘 날짜만 (한국 시간대 기준)
+      const now = new Date();
+      const kstOffset = 9 * 60; // UTC+9 (분 단위)
+      const kstTime = new Date(now.getTime() + kstOffset * 60 * 1000);
+      const today = kstTime.toISOString().split('T')[0];
+      jql = `created >= "${today}" AND created <= "${today} 23:59"`;
+      console.log(`"오늘" 선택 - JQL 쿼리: ${jql}`);
+    } else {
+      // 여러 날짜를 선택한 경우 - 기존 방식 유지
+      jql = `created >= -${daysBack}d`;
+    }
+    
     if (projectKey && projectKey !== 'all') {
       jql = `project = ${projectKey} AND ${jql}`;
     }
@@ -122,11 +136,45 @@ export class JiraClient {
   }
 
   async getRecentlyCompletedIssues(daysBack = 7, projectKey?: string): Promise<JiraIssue[]> {
-    let jql = `status in (Done, Resolved, Closed) AND updated >= -${daysBack}d`;
+    let jql: string;
+    
+    if (daysBack === 1) {
+      // "오늘"을 선택한 경우 - 정확히 오늘 날짜만 (한국 시간대 기준)
+      const now = new Date();
+      const kstOffset = 9 * 60; // UTC+9 (분 단위)
+      const kstTime = new Date(now.getTime() + kstOffset * 60 * 1000);
+      const today = kstTime.toISOString().split('T')[0];
+      jql = `status in (Done, Resolved, Closed) AND resolutiondate >= "${today}" AND resolutiondate <= "${today} 23:59"`;
+      console.log(`"오늘" 완료된 이슈 선택 - JQL 쿼리: ${jql}`);
+    } else {
+      // 여러 날짜를 선택한 경우 - 기존 방식 유지 (단, resolutiondate 사용)
+      jql = `status in (Done, Resolved, Closed) AND resolutiondate >= -${daysBack}d`;
+    }
+    
     if (projectKey && projectKey !== 'all') {
       jql = `project = ${projectKey} AND ${jql}`;
     }
-    jql += ` ORDER BY updated DESC`;
+    jql += ` ORDER BY resolutiondate DESC`;
+    return await this.getAllIssues(jql);
+  }
+
+  async getRecentlyCreatedIssuesByDateRange(startDate: string, endDate: string, projectKey?: string): Promise<JiraIssue[]> {
+    let jql = `created >= "${startDate}" AND created <= "${endDate} 23:59"`;
+    console.log(`새로운 이슈 날짜 범위 JQL: ${jql}`);
+    if (projectKey && projectKey !== 'all') {
+      jql = `project = ${projectKey} AND ${jql}`;
+    }
+    jql += ` ORDER BY created DESC`;
+    return await this.getAllIssues(jql);
+  }
+
+  async getRecentlyCompletedIssuesByDateRange(startDate: string, endDate: string, projectKey?: string): Promise<JiraIssue[]> {
+    let jql = `status in (Done, Resolved, Closed) AND resolutiondate >= "${startDate}" AND resolutiondate <= "${endDate} 23:59"`;
+    console.log(`완료된 이슈 날짜 범위 JQL: ${jql}`);
+    if (projectKey && projectKey !== 'all') {
+      jql = `project = ${projectKey} AND ${jql}`;
+    }
+    jql += ` ORDER BY resolutiondate DESC`;
     return await this.getAllIssues(jql);
   }
 
