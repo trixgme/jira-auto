@@ -203,76 +203,147 @@ async function generateCompletedIssuesReport(
     ? `${dateRange.startDate} ~ ${dateRange.endDate}`
     : `최근 ${period}일`;
 
-  const prompt = `${periodText} 기간에 완료된 Jira 이슈에 대한 종합적이고 상세한 분석 보고서를 작성해주세요.
+  // 우선순위별 이모지 반환 함수
+  const getPriorityEmoji = (priority: string): string => {
+    switch (priority?.toLowerCase()) {
+      case 'highest': case 'critical': return '🔴';
+      case 'high': return '🟡';  
+      case 'medium': return '🟢';
+      case 'low': return '🔵';
+      case 'lowest': return '⚪';
+      default: return '⚫';
+    }
+  };
 
-## 기본 정보
-- 프로젝트: ${project === 'all' ? '전체 프로젝트' : project}
-- 분석 기간: ${periodText}
-- 완료된 이슈 수: ${issues.length}개
+  const prompt = `${periodText} 기간에 완료된 Jira 이슈에 대한 아름답고 전문적인 마크다운 보고서를 작성해주세요.
 
-## 상세 통계
-프로젝트별: ${stats.byProject.map(([name, count]) => `${name}(${count})`).join(', ')}
-이슈 유형별: ${stats.byType.map(([name, count]) => `${name}(${count})`).join(', ')}
-우선순위별: ${stats.byPriority.map(([name, count]) => `${name}(${count})`).join(', ')}
-상태별: ${stats.byStatus.map(([name, count]) => `${name}(${count})`).join(', ')}
-담당자별: ${stats.byAssignee.map(([name, count]) => `${name}(${count})`).join(', ')}
+## 📋 기본 정보
+| 항목 | 세부사항 |
+|------|----------|
+| 🎯 **프로젝트** | ${project === 'all' ? '전체 프로젝트' : project} |
+| 📅 **분석 기간** | ${periodText} |
+| ✅ **완료된 이슈** | ${issues.length}개 |
 
-## 모든 완료된 이슈 상세 정보
-${issuesSummary.map(issue => {
+## 📊 상세 통계 테이블
+
+### 프로젝트별 현황
+| 프로젝트 | 완료 이슈 | 비율 |
+|----------|-----------|------|
+${stats.byProject.map(([name, count]) => `| 📁 **${name}** | ${count}개 | ${((count / issues.length) * 100).toFixed(1)}% |`).join('\n')}
+
+### 이슈 유형별 분포
+| 이슈 유형 | 개수 | 비율 |
+|-----------|------|------|
+${stats.byType.map(([name, count]) => `| 🏷️ **${name}** | ${count}개 | ${((count / issues.length) * 100).toFixed(1)}% |`).join('\n')}
+
+### 우선순위별 처리 현황
+| 우선순위 | 개수 | 비율 |
+|----------|------|------|
+${stats.byPriority.map(([name, count]) => `| ${getPriorityEmoji(name)} **${name}** | ${count}개 | ${((count / issues.length) * 100).toFixed(1)}% |`).join('\n')}
+
+### 담당자별 기여도
+| 담당자 | 완료 이슈 | 기여도 |
+|--------|-----------|--------|
+${stats.byAssignee.slice(0, 10).map(([name, count]) => `| 👤 **${name}** | ${count}개 | ${((count / issues.length) * 100).toFixed(1)}% |`).join('\n')}
+
+## 📋 완료된 이슈 상세 목록
+
+${issuesSummary.map((issue, index) => {
   const createdDate = new Date(issue.created).toLocaleDateString('ko-KR');
   const resolvedDate = issue.resolved ? new Date(issue.resolved).toLocaleDateString('ko-KR') : 'N/A';
   const duration = issue.resolved ? Math.ceil((new Date(issue.resolved).getTime() - new Date(issue.created).getTime()) / (1000 * 60 * 60 * 24)) : 'N/A';
   
-  return `### [${issue.key}] ${issue.summary}
-- **유형**: ${issue.type}
-- **우선순위**: ${issue.priority}
-- **담당자**: ${issue.assignee}
-- **프로젝트**: ${issue.project}
-- **상태**: ${issue.status}
-- **생성일**: ${createdDate}
-- **완료일**: ${resolvedDate}
-- **소요시간**: ${duration}일
-- **설명**: ${issue.description}
-- **라벨**: ${issue.labels.join(', ') || 'None'}
-- **컴포넌트**: ${issue.components.join(', ') || 'None'}
-- **스토리 포인트**: ${issue.storyPoints || 'N/A'}
-- **예상 시간**: ${issue.timeEstimate || 'N/A'}
-- **실제 소요 시간**: ${issue.timeSpent || 'N/A'}`;
+  return `### ${index + 1}. [${issue.key}] ${issue.summary}
+
+| 속성 | 값 |
+|------|-----|
+| 🏷️ **유형** | ${issue.type} |
+| ${getPriorityEmoji(issue.priority)} **우선순위** | ${issue.priority} |
+| 👤 **담당자** | ${issue.assignee} |
+| 📁 **프로젝트** | ${issue.project} |
+| 📊 **상태** | ${issue.status} |
+| 📅 **생성일** | ${createdDate} |
+| ✅ **완료일** | ${resolvedDate} |
+| ⏱️ **소요시간** | ${duration}일 |
+| 🔤 **라벨** | ${issue.labels.join(', ') || 'None'} |
+| 🔧 **컴포넌트** | ${issue.components.join(', ') || 'None'} |
+| 📈 **스토리 포인트** | ${issue.storyPoints || 'N/A'} |
+| ⏳ **예상 시간** | ${issue.timeEstimate || 'N/A'} |
+| ⏰ **실제 소요 시간** | ${issue.timeSpent || 'N/A'} |
+
+> **📝 설명**: ${issue.description || '설명 없음'}
+
+---`;
 }).join('\n\n')}
 
-다음 구조로 매우 상세하고 포괄적인 보고서를 작성해주세요:
+**다음과 같은 아름다운 마크다운 형식으로 전문적인 보고서를 작성해주세요:**
+
+# 🚀 Jira 이슈 완료 분석 보고서
+
+> 📊 데이터 기반의 포괄적인 프로젝트 성과 분석
+
+## 🎯 Executive Summary
+> 핵심 요약을 박스 형태로 제공
 
 ## 📊 완료 현황 종합 분석
-- 전체 통계와 프로젝트별 상세 현황
-- 이슈 유형별 분포와 특징 분석
-- 우선순위별 처리 현황
+- 📈 **전체 통계 요약** (배지 스타일로)
+- 🏢 **프로젝트별 상세 현황** (진행률 바 형태로 표현)
+- 🏷️ **이슈 유형별 분포와 특징** (테이블과 백분율)
+- 🚨 **우선순위별 처리 현황** (색상 구분)
 
-## 🎯 주요 성과 및 하이라이트
-- 가장 중요한 완료 이슈들과 그 성과
-- 복잡도가 높았던 이슈들의 해결 과정
-- 빠르게 처리된 이슈들의 특징
+## 🏆 주요 성과 및 하이라이트
+- ⭐ **TOP 5 중요 완료 이슈** (순위와 함께)
+- 💪 **복잡도가 높았던 이슈들** (도전과 해결)
+- ⚡ **빠르게 처리된 이슈들** (효율성 분석)
+- 🎉 **주목할 만한 성과** (칭찬과 인정)
 
 ## 📈 생산성 및 효율성 분석
-- 담당자별 상세 기여도와 성과 분석
-- 평균 처리 시간과 효율성 지표
-- 프로젝트별 생산성 비교
+- 👥 **팀원별 기여도 분석** (순위 테이블)
+- ⏱️ **평균 처리 시간 분석** (차트 형태 설명)
+- 🏢 **프로젝트별 생산성 비교** (성과 지표)
+- 📊 **효율성 KPI** (측정 가능한 지표)
 
 ## 🔍 패턴 및 트렌드 분석
-- 이슈 처리 패턴의 변화
-- 반복되는 문제점이나 개선점
-- 시간대별, 유형별 처리 경향
+- 📈 **처리 패턴의 변화** (시간 흐름 분석)
+- 🔄 **반복되는 이슈 패턴** (개선 기회)
+- 📅 **시간대별/요일별 처리 경향**
+- 🎯 **유형별 처리 특성**
 
-## 💡 상세 인사이트 및 개선 제안
-- 발견된 구체적인 패턴과 문제점
-- 생산성 향상을 위한 실행 가능한 제안
-- 팀 협업 개선 방안
-- 프로세스 최적화 아이디어
+## 💡 인사이트 및 개선 제안
+- 🎯 **핵심 발견사항** (우선순위별)
+- 🚀 **생산성 향상 제안** (실행 가능한)
+- 🤝 **팀 협업 개선 방안** (구체적인)
+- ⚙️ **프로세스 최적화** (단계별 가이드)
 
-## 📝 결론 및 향후 계획
-- 이번 기간의 전반적인 평가
-- 다음 기간을 위한 목표 설정 제안
+## 📋 Action Items
+- [ ] **즉시 실행 항목** (긴급)
+- [ ] **단기 개선 과제** (1-2주)
+- [ ] **중기 전략 과제** (1-3개월)
 
-매우 상세하고 실용적인 마크다운 보고서를 작성해주세요. 각 섹션은 충분히 자세하게 작성하고, 구체적인 데이터와 함께 의미있는 분석을 제공해주세요.`;
+## 📊 메트릭 대시보드
+> 주요 KPI를 시각적으로 표현
+
+## 🎯 결론 및 향후 계획
+- ✅ **기간별 성과 평가**
+- 🎯 **다음 기간 목표**  
+- 📈 **성장 로드맵**
+
+---
+*📅 보고서 생성: ${new Date().toLocaleString('ko-KR')} | 🤖 AI 분석 기반*
+
+**마크다운 포맷팅 요구사항:**
+1. 풍부한 이모지 사용 (각 섹션과 항목에)
+2. 테이블로 데이터 정리
+3. 박스 인용문(>) 활용
+4. 구분선(---) 적극 활용
+5. 배지 스타일 표현
+6. 체크박스 리스트 사용
+7. 계층적 제목 구조
+8. 강조 표시(**굵게**, *기울임*)
+9. 전문적이고 시각적으로 아름다운 레이아웃
+
+각 섹션을 매우 상세하게 작성하고, 데이터 기반의 구체적인 분석을 제공해주세요.`;
+
 
   // 토큰 제한 제거 - 모든 데이터를 포함하여 분석
   console.log(`AI 보고서 생성 - 전체 이슈 수: ${issues.length}, 상세 분석 대상: ${issuesSummary.length}`);
