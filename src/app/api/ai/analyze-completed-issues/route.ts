@@ -147,7 +147,9 @@ async function generateCompletedIssuesReport(
     const issuesSummary = issues.map(issue => ({
       key: issue.key,
       summary: issue.fields.summary, // 제목 길이 제한 없음
-      description: issue.fields.description ? issue.fields.description.substring(0, 500) : '', // 설명 추가
+      description: typeof issue.fields.description === 'string' 
+        ? issue.fields.description.substring(0, 500) 
+        : '', // 설명 추가 - 문자열인 경우만 처리
       type: issue.fields.issuetype?.name || 'Unknown',
       priority: issue.fields.priority?.name || 'None',
       assignee: issue.fields.assignee?.displayName || 'Unassigned',
