@@ -110,12 +110,12 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] p-0">
-        <DialogHeader className="px-6 pt-6 pb-4 pr-16 border-b">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <DialogTitle className="text-xl font-bold">{title}</DialogTitle>
-              <Badge variant={reportData.reportType === 'ai' ? 'default' : 'secondary'}>
+      <DialogContent className="max-w-[95vw] sm:max-w-6xl max-h-[95vh] p-0 w-full">
+        <DialogHeader className="px-3 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 pr-12 sm:pr-16 border-b">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+              <DialogTitle className="text-lg sm:text-xl font-bold line-clamp-2 sm:line-clamp-1">{title}</DialogTitle>
+              <Badge variant={reportData.reportType === 'ai' ? 'default' : 'secondary'} className="self-start sm:self-auto">
                 {reportData.reportType === 'ai' ? 'AI 분석' : '기본 분석'}
               </Badge>
             </div>
@@ -124,62 +124,66 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                 onClick={handleCopy}
                 size="sm"
                 variant="outline"
-                className="text-xs"
+                className="text-xs px-2 sm:px-3"
               >
-                <Copy className="h-3 w-3 mr-1" />
-                {copied ? '복사됨!' : '복사'}
+                <Copy className="h-3 w-3 sm:mr-1" />
+                <span className="hidden sm:inline">{copied ? '복사됨!' : '복사'}</span>
               </Button>
               <Button
                 onClick={handleDownload}
                 size="sm"
                 variant="outline"
-                className="text-xs"
+                className="text-xs px-2 sm:px-3"
               >
-                <Download className="h-3 w-3 mr-1" />
-                다운로드
+                <Download className="h-3 w-3 sm:mr-1" />
+                <span className="hidden sm:inline">다운로드</span>
               </Button>
             </div>
           </div>
         </DialogHeader>
         
-        <div className="px-6 py-4 overflow-y-auto max-h-[calc(90vh-120px)]">
+        <div className="px-3 sm:px-6 py-3 sm:py-4 overflow-y-auto max-h-[calc(95vh-80px)] sm:max-h-[calc(90vh-120px)]">
           <div className="w-full">
-            <div className="flex gap-2 border-b mb-4 pb-2">
+            <div className="flex flex-wrap gap-1 sm:gap-2 border-b mb-3 sm:mb-4 pb-2 overflow-x-auto">
               <Button
                 variant={activeTab === 'overview' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setActiveTab('overview')}
-                className="text-xs"
+                className="text-xs whitespace-nowrap flex-shrink-0"
               >
-                <BarChart3 className="h-3 w-3 mr-1" />
-                전체 요약
+                <BarChart3 className="h-3 w-3 sm:mr-1" />
+                <span className="hidden sm:inline">전체 요약</span>
+                <span className="sm:hidden">요약</span>
               </Button>
               <Button
                 variant={activeTab === 'charts' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setActiveTab('charts')}
-                className="text-xs"
+                className="text-xs whitespace-nowrap flex-shrink-0"
               >
-                <PieChartIcon className="h-3 w-3 mr-1" />
-                차트 분석
+                <PieChartIcon className="h-3 w-3 sm:mr-1" />
+                <span className="hidden sm:inline">차트 분석</span>
+                <span className="sm:hidden">차트</span>
               </Button>
               <Button
                 variant={activeTab === 'trends' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setActiveTab('trends')}
-                className="text-xs"
+                className="text-xs whitespace-nowrap flex-shrink-0"
               >
-                <TrendingUp className="h-3 w-3 mr-1" />
-                트렌드
+                <TrendingUp className="h-3 w-3 sm:mr-1" />
+                <span className="sm:hidden">트렌드</span>
+                <span className="hidden sm:inline">트렌드</span>
               </Button>
               <Button
                 variant={activeTab === 'report' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setActiveTab('report')}
-                className="text-xs"
+                className="text-xs whitespace-nowrap flex-shrink-0"
               >
-                <FileText className="h-3 w-3 mr-1" />
-                상세 보고서
+                <FileText className="h-3 w-3 sm:mr-1" />
+                <span className="hidden sm:inline">상세 보고서</span>
+                <span className="sm:hidden">보고서</span>
               </Button>
             </div>
 
@@ -200,13 +204,13 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                   </CardContent>
                 </Card>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm">총 완료 이슈</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-2xl font-bold">{chartData.totalStats.totalIssues}</p>
+                      <p className="text-xl sm:text-2xl font-bold">{chartData.totalStats.totalIssues}</p>
                     </CardContent>
                   </Card>
                   <Card>
@@ -214,7 +218,7 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                       <CardTitle className="text-sm">평균 완료 시간</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-2xl font-bold">{chartData.totalStats.avgCompletionTime}일</p>
+                      <p className="text-xl sm:text-2xl font-bold">{chartData.totalStats.avgCompletionTime}일</p>
                     </CardContent>
                   </Card>
                   <Card>
@@ -235,17 +239,17 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                   </Card>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-sm">프로젝트별 완료 현황</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ResponsiveContainer width="100%" height={200}>
+                      <ResponsiveContainer width="100%" height={180} className="sm:h-[200px]">
                         <BarChart data={chartData.projectDistribution}>
                           <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="name" angle={-45} textAnchor="end" height={60} fontSize={10} />
-                          <YAxis fontSize={10} />
+                          <XAxis dataKey="name" angle={-45} textAnchor="end" height={60} fontSize={9} className="sm:text-[10px]" />
+                          <YAxis fontSize={9} className="sm:text-[10px]" />
                           <Tooltip />
                           <Bar dataKey="value" fill="#8884d8" />
                         </BarChart>
@@ -258,7 +262,7 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                       <CardTitle className="text-sm">이슈 유형별 분포</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ResponsiveContainer width="100%" height={200}>
+                      <ResponsiveContainer width="100%" height={180} className="sm:h-[200px]">
                         <PieChart>
                           <Pie
                             data={chartData.issueTypeDistribution}
@@ -266,8 +270,10 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                             cy="50%"
                             labelLine={false}
                             label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
-                            style={{ fontSize: '10px' }}
-                            outerRadius={80}
+                            style={{ fontSize: '9px' }}
+                            className="sm:text-[10px]"
+                            outerRadius={70}
+                            className="sm:outerRadius-[80px]"
                             fill="#8884d8"
                             dataKey="value"
                           >
@@ -286,21 +292,21 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
 
             {activeTab === 'charts' && (
               <div className="mt-4 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-sm">담당자별 완료 현황 (Top 10)</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ResponsiveContainer width="100%" height={300}>
+                      <ResponsiveContainer width="100%" height={250} className="sm:h-[300px]">
                         <BarChart data={chartData.assigneeDistribution} layout="vertical">
                           <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis type="number" />
+                          <XAxis type="number" fontSize={9} />
                           <YAxis 
                             dataKey="name" 
                             type="category" 
-                            width={85}
-                            fontSize={11}
+                            width={70}
+                            fontSize={10}
                             interval={0}
                           />
                           <Tooltip 
@@ -320,7 +326,7 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                       <CardTitle className="text-sm">우선순위별 완료 분포</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ResponsiveContainer width="100%" height={300}>
+                      <ResponsiveContainer width="100%" height={250} className="sm:h-[300px]">
                         <PieChart>
                           <Pie
                             data={chartData.priorityDistribution}
@@ -328,8 +334,8 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                             cy="50%"
                             labelLine={false}
                             label={({ name, value }) => `${name}: ${value}`}
-                            style={{ fontSize: '11px' }}
-                            outerRadius={100}
+                            style={{ fontSize: '9px' }}
+                            outerRadius={80}
                             fill="#8884d8"
                             dataKey="value"
                           >
@@ -338,7 +344,7 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                             ))}
                           </Pie>
                           <Tooltip />
-                          <Legend />
+                          <Legend wrapperStyle={{ fontSize: '11px' }} />
                         </PieChart>
                       </ResponsiveContainer>
                     </CardContent>
@@ -354,7 +360,7 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                     <CardTitle className="text-sm">일별 완료 트렌드</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <ResponsiveContainer width="100%" height={400}>
+                    <ResponsiveContainer width="100%" height={300} className="sm:h-[400px]">
                       <LineChart data={chartData.completionTrend}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis 
@@ -362,19 +368,23 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                           tickFormatter={formatDate}
                           angle={-45}
                           textAnchor="end"
-                          height={60}
-                          fontSize={10}
+                          height={50}
+                          className="sm:h-[60px]"
+                          fontSize={9}
+                          className="sm:text-[10px]"
                         />
-                        <YAxis fontSize={10} />
+                        <YAxis fontSize={9} className="sm:text-[10px]" />
                         <Tooltip 
                           labelFormatter={(value) => `날짜: ${new Date(value).toLocaleDateString('ko-KR')}`}
+                          contentStyle={{ fontSize: '12px' }}
                         />
                         <Line 
                           type="monotone" 
                           dataKey="count" 
                           stroke="#8884d8" 
                           strokeWidth={2}
-                          dot={{ fill: '#8884d8' }}
+                          dot={{ fill: '#8884d8', r: 3 }}
+                          className="sm:strokeWidth-[2] sm:dot-r-[4]"
                           name="완료 이슈 수"
                         />
                       </LineChart>
@@ -387,9 +397,13 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
             {activeTab === 'report' && (
               <div className="mt-4">
                 <Card>
-                  <CardContent className="pt-6">
+                  <CardContent className="pt-4 sm:pt-6">
                     <div 
-                      className="prose prose-sm max-w-none dark:prose-invert"
+                      className="prose prose-xs sm:prose-sm max-w-none dark:prose-invert overflow-x-auto"
+                      style={{
+                        fontSize: '14px',
+                        lineHeight: '1.5'
+                      }}
                       dangerouslySetInnerHTML={{ 
                         __html: formatMarkdown(reportData.report)
                       }}

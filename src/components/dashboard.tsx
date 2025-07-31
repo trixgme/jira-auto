@@ -542,8 +542,10 @@ export function Dashboard() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              새로 추가된 이슈
-              <Badge>{filteredNewIssues.length}</Badge>
+              <div className="flex items-center gap-2">
+                <span>새로 추가된 이슈</span>
+                <Badge>{filteredNewIssues.length}</Badge>
+              </div>
             </CardTitle>
             <CardDescription>
               {dateRange.startDate && dateRange.endDate 
@@ -581,20 +583,20 @@ export function Dashboard() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              완료된 이슈
               <div className="flex items-center gap-2">
-                <Button
-                  onClick={generateReport}
-                  disabled={isGeneratingReport || filteredCompletedIssues.length === 0}
-                  size="sm"
-                  variant="outline"
-                  className="text-xs"
-                >
-                  <FileText className="h-3 w-3 mr-1" />
-                  {isGeneratingReport ? '분석중...' : 'AI 보고서'}
-                </Button>
+                <span>완료된 이슈</span>
                 <Badge>{filteredCompletedIssues.length}</Badge>
               </div>
+              <Button
+                onClick={generateReport}
+                disabled={isGeneratingReport || filteredCompletedIssues.length === 0}
+                size="sm"
+                variant="outline"
+                className="text-xs font-medium border-purple-500 bg-purple-500 text-white hover:bg-purple-600 hover:border-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <FileText className="h-3 w-3 mr-1 text-white" />
+                {isGeneratingReport ? '분석중...' : 'AI 보고서'}
+              </Button>
             </CardTitle>
             <CardDescription>
               {dateRange.startDate && dateRange.endDate 
