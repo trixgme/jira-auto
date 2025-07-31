@@ -286,7 +286,7 @@ ${issuesSummary.map(issue => {
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'gpt-4o', // 최신 고성능 GPT-4o 모델
+        model: 'gpt-4.1', // 최신 GPT-4.1 모델 (향상된 코딩, 지시사항 이행, 긴 컨텍스트 이해)
         messages: [
           {
             role: 'system',
@@ -297,7 +297,7 @@ ${issuesSummary.map(issue => {
             content: prompt
           }
         ],
-        max_tokens: 16384, // 최대 토큰 수로 설정 (GPT-4o 최대값)
+        max_tokens: 16384, // GPT-4o 최대 출력 토큰 수
         temperature: 0.3 // 더 정확하고 일관된 분석을 위해 낮은 temperature
       }),
     });

@@ -87,7 +87,7 @@ Respond with ONLY a JSON object in this format:
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo",
+        model: "gpt-4.1",
         messages: [
           {
             role: "system",
@@ -98,6 +98,7 @@ Respond with ONLY a JSON object in this format:
             content: prompt,
           },
         ],
+        max_tokens: 16384,
         temperature: 0.3,
       }),
     });
