@@ -273,7 +273,7 @@ ${issuesSummary.map(issue => {
 매우 상세하고 실용적인 마크다운 보고서를 작성해주세요. 각 섹션은 충분히 자세하게 작성하고, 구체적인 데이터와 함께 의미있는 분석을 제공해주세요.`;
 
   // 토큰 제한 제거 - 모든 데이터를 포함하여 분석
-  console.log(`AI 보고서 생성 - 전체 이슈 수: ${issues.length}, 상세 분석 대상: ${issuesSummary.length}`);`;
+  console.log(`AI 보고서 생성 - 전체 이슈 수: ${issues.length}, 상세 분석 대상: ${issuesSummary.length}`);
 
   try {
     // OpenAI API 호출 - 최고 성능 모델과 무제한 토큰
