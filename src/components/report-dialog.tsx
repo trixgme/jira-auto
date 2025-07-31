@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Download, Copy, BarChart3, PieChartIcon, TrendingUp, FileText } from 'lucide-react';
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
   BarChart,
   Bar,
@@ -86,18 +88,6 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
     URL.revokeObjectURL(url);
   };
 
-  const formatMarkdown = (text: string) => {
-    return text
-      .replace(/^### (.*$)/gm, '<h3 class="text-lg font-semibold mt-4 mb-2 text-foreground">$1</h3>')
-      .replace(/^## (.*$)/gm, '<h2 class="text-xl font-bold mt-6 mb-3 text-foreground">$1</h2>')
-      .replace(/^# (.*$)/gm, '<h1 class="text-2xl font-bold mt-8 mb-4 text-foreground">$1</h1>')
-      .replace(/^\*\*(.*?)\*\*/gm, '<strong class="font-semibold text-foreground">$1</strong>')
-      .replace(/^\*(.*?)\*/gm, '<em class="italic">$1</em>')
-      .replace(/^- (.*$)/gm, '<li class="ml-4 mb-1 text-muted-foreground">• $1</li>')
-      .replace(/^\d+\. (.*$)/gm, '<li class="ml-4 mb-1 text-muted-foreground">$1</li>')
-      .replace(/\n\n/g, '<br/><br/>')
-      .replace(/\n/g, '<br/>');
-  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -393,16 +383,127 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
               <div className="mt-4">
                 <Card>
                   <CardContent className="pt-4 sm:pt-6">
-                    <div 
-                      className="prose prose-xs sm:prose-sm max-w-none dark:prose-invert overflow-x-auto"
-                      style={{
-                        fontSize: '14px',
-                        lineHeight: '1.5'
-                      }}
-                      dangerouslySetInnerHTML={{ 
-                        __html: formatMarkdown(reportData.report)
-                      }}
-                    />
+                    <div className="prose prose-xs sm:prose-sm max-w-none dark:prose-invert overflow-x-auto">
+                      <ReactMarkdown 
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          // 테이블 스타일링
+                          table: ({ children, ...props }) => (
+                            <div className="overflow-x-auto my-4">
+                              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg" {...props}>
+                                {children}
+                              </table>
+                            </div>
+                          ),
+                          thead: ({ children, ...props }) => (
+                            <thead className="bg-gray-50 dark:bg-gray-800" {...props}>
+                              {children}
+                            </thead>
+                          ),
+                          tbody: ({ children, ...props }) => (
+                            <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700" {...props}>
+                              {children}
+                            </tbody>
+                          ),
+                          th: ({ children, ...props }) => (
+                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-r border-gray-200 dark:border-gray-700 last:border-r-0" {...props}>
+                              {children}
+                            </th>
+                          ),
+                          td: ({ children, ...props }) => (
+                            <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 border-r border-gray-200 dark:border-gray-700 last:border-r-0" {...props}>
+                              {children}
+                            </td>
+                          ),
+                          // 제목 스타일링
+                          h1: ({ children, ...props }) => (
+                            <h1 className="text-2xl font-bold mt-8 mb-4 text-foreground border-b pb-2" {...props}>
+                              {children}
+                            </h1>
+                          ),
+                          h2: ({ children, ...props }) => (
+                            <h2 className="text-xl font-bold mt-6 mb-3 text-foreground" {...props}>
+                              {children}
+                            </h2>
+                          ),
+                          h3: ({ children, ...props }) => (
+                            <h3 className="text-lg font-semibold mt-4 mb-2 text-foreground" {...props}>
+                              {children}
+                            </h3>
+                          ),
+                          // 인용문 스타일링
+                          blockquote: ({ children, ...props }) => (
+                            <blockquote className="border-l-4 border-blue-500 pl-4 py-2 my-4 bg-blue-50 dark:bg-blue-900/20 italic" {...props}>
+                              {children}
+                            </blockquote>
+                          ),
+                          // 코드 블록 스타일링
+                          code: ({ children, className, ...props }) => {
+                            const isInline = !className;
+                            if (isInline) {
+                              return (
+                                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-sm" {...props}>
+                                  {children}
+                                </code>
+                              );
+                            }
+                            return (
+                              <code className="block bg-gray-100 dark:bg-gray-800 p-3 rounded text-sm overflow-x-auto" {...props}>
+                                {children}
+                              </code>
+                            );
+                          },
+                          // 체크박스 스타일링
+                          input: ({ type, checked, ...props }) => {
+                            if (type === 'checkbox') {
+                              return (
+                                <input 
+                                  type="checkbox" 
+                                  checked={checked}
+                                  readOnly
+                                  className="mr-2 accent-blue-500"
+                                  {...props}
+                                />
+                              );
+                            }
+                            return <input type={type} {...props} />;
+                          },
+                          // 리스트 스타일링
+                          ul: ({ children, ...props }) => (
+                            <ul className="list-disc list-inside my-2 space-y-1" {...props}>
+                              {children}
+                            </ul>
+                          ),
+                          ol: ({ children, ...props }) => (
+                            <ol className="list-decimal list-inside my-2 space-y-1" {...props}>
+                              {children}
+                            </ol>
+                          ),
+                          li: ({ children, ...props }) => (
+                            <li className="ml-2 text-muted-foreground" {...props}>
+                              {children}
+                            </li>
+                          ),
+                          // 구분선 스타일링
+                          hr: ({ ...props }) => (
+                            <hr className="my-6 border-t border-gray-300 dark:border-gray-600" {...props} />
+                          ),
+                          // 강조 스타일링
+                          strong: ({ children, ...props }) => (
+                            <strong className="font-semibold text-foreground" {...props}>
+                              {children}
+                            </strong>
+                          ),
+                          em: ({ children, ...props }) => (
+                            <em className="italic" {...props}>
+                              {children}
+                            </em>
+                          ),
+                        }}
+                      >
+                        {reportData.report}
+                      </ReactMarkdown>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
