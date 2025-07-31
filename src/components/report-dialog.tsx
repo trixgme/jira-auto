@@ -248,8 +248,8 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                       <ResponsiveContainer width="100%" height={180} className="sm:h-[200px]">
                         <BarChart data={chartData.projectDistribution}>
                           <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="name" angle={-45} textAnchor="end" height={60} fontSize={9} className="sm:text-[10px]" />
-                          <YAxis fontSize={9} className="sm:text-[10px]" />
+                          <XAxis dataKey="name" angle={-45} textAnchor="end" height={60} fontSize={9} />
+                          <YAxis fontSize={9} />
                           <Tooltip />
                           <Bar dataKey="value" fill="#8884d8" />
                         </BarChart>
@@ -271,9 +271,7 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                             labelLine={false}
                             label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
                             style={{ fontSize: '9px' }}
-                            className="sm:text-[10px]"
                             outerRadius={70}
-                            className="sm:outerRadius-[80px]"
                             fill="#8884d8"
                             dataKey="value"
                           >
@@ -369,11 +367,9 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                           angle={-45}
                           textAnchor="end"
                           height={50}
-                          className="sm:h-[60px]"
                           fontSize={9}
-                          className="sm:text-[10px]"
                         />
-                        <YAxis fontSize={9} className="sm:text-[10px]" />
+                        <YAxis fontSize={9} />
                         <Tooltip 
                           labelFormatter={(value) => `날짜: ${new Date(value).toLocaleDateString('ko-KR')}`}
                           contentStyle={{ fontSize: '12px' }}
@@ -384,7 +380,6 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                           stroke="#8884d8" 
                           strokeWidth={2}
                           dot={{ fill: '#8884d8', r: 3 }}
-                          className="sm:strokeWidth-[2] sm:dot-r-[4]"
                           name="완료 이슈 수"
                         />
                       </LineChart>
