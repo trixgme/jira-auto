@@ -8,16 +8,17 @@ export async function GET(request: Request) {
     const projectKey = searchParams.get('project') || undefined;
     const startDate = searchParams.get('startDate') || undefined;
     const endDate = searchParams.get('endDate') || undefined;
+    const language = searchParams.get('language') || undefined;
     
     const jiraClient = new JiraClient();
     
     let issues;
     if (startDate && endDate) {
       // 날짜 범위로 조회
-      issues = await jiraClient.getRecentlyCreatedIssuesByDateRange(startDate, endDate, projectKey);
+      issues = await jiraClient.getRecentlyCreatedIssuesByDateRange(startDate, endDate, projectKey, language);
     } else {
       // 기존 방식 (days 기준)
-      issues = await jiraClient.getRecentlyCreatedIssues(daysBack, projectKey);
+      issues = await jiraClient.getRecentlyCreatedIssues(daysBack, projectKey, language);
     }
     
     return NextResponse.json({

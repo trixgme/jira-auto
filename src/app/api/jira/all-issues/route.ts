@@ -7,6 +7,7 @@ export async function GET(request: Request) {
     const month = searchParams.get('month');
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
+    const language = searchParams.get('language') || undefined;
     
     const jiraClient = new JiraClient();
     
@@ -35,7 +36,7 @@ export async function GET(request: Request) {
       console.log('모든 이슈를 가져오는 중...');
     }
     
-    const issues = await jiraClient.getAllIssues(jql);
+    const issues = await jiraClient.getAllIssues(jql, language);
     
     console.log(`총 ${issues.length}개의 이슈를 가져왔습니다.`);
     

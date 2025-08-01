@@ -10,7 +10,7 @@ import { Navigation } from '@/components/navigation';
 import { LoadingProgress } from '@/components/loading-progress';
 import { LogoutButton } from '@/components/logout-button';
 import { DateRangePicker } from '@/components/date-range-picker';
-import { Users, Bug, CheckCircle, Clock, TrendingUp, ChevronUp, ChevronDown, ChevronsUpDown, ExternalLink, Star, Sparkles, Loader2, MessageSquare } from 'lucide-react';
+import { Users, Bug, CheckCircle, Clock, TrendingUp, ChevronUp, ChevronDown, ChevronsUpDown, ExternalLink, Star, Sparkles, Loader2, MessageSquare, RefreshCw } from 'lucide-react';
 import type { JiraIssue, JiraProject, IssueDifficulty, CommentAnalysis } from '@/lib/types';
 import { DifficultyBadge } from '@/components/difficulty-badge';
 import { DifficultyDialog } from '@/components/difficulty-dialog';
@@ -35,6 +35,7 @@ interface KpiData {
   totalUnresolved: number;
   loading: boolean;
   error: string | null;
+  cachedAt?: number; // 캐시 시간 (타임스탬프)
 }
 
 interface UserIssues {
@@ -50,6 +51,23 @@ export function KpiDashboard() {
     totalUnresolved: 0,
     loading: true,
     error: null,
+  });
+
+  // 데이터 캐시를 위한 상태 (로컬스토리지에서 복원)
+  const [dataCache, setDataCache] = useState<Record<string, KpiData>>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('kpi-data-cache');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          console.log('💾 로컬스토리지에서 KPI 캐시 복원:', Object.keys(parsed));
+          return parsed;
+        }
+      } catch (error) {
+        console.error('KPI 캐시 복원 실패:', error);
+      }
+    }
+    return {};
   });
 
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // 현재 월로 초기화
@@ -81,8 +99,71 @@ export function KpiDashboard() {
   useEffect(() => {
     loadFavoriteUsers();
     fetchJiraConfig();
-    fetchKpiData();
-  }, [selectedMonth, dateRange]);
+  }, []);
+
+  // selectedMonth나 dateRange가 변경될 때만 데이터 새로고침
+  useEffect(() => {
+    fetchKpiDataWithCache();
+  }, [language, selectedMonth, dateRange.startDate, dateRange.endDate]);
+
+  // 캐시 키 생성 함수
+  const getCacheKey = () => {
+    if (dateRange.startDate && dateRange.endDate) {
+      const startStr = dateRange.startDate.toISOString().split('T')[0];
+      const endStr = dateRange.endDate.toISOString().split('T')[0];
+      return `${language}_range_${startStr}_${endStr}`;
+    }
+    return `${language}_month_${selectedMonth}`;
+  };
+
+  // 캐시된 데이터 확인 후 필요시에만 새로 가져오기
+  const fetchKpiDataWithCache = async () => {
+    const cacheKey = getCacheKey();
+    const CACHE_DURATION = 5 * 60 * 1000; // 5분 캐시 유지
+    
+    // 캐시된 데이터가 있는지 확인
+    const cachedData = dataCache[cacheKey];
+    if (cachedData && !cachedData.loading && !cachedData.error) {
+      // 캐시 만료 시간 확인
+      const now = Date.now();
+      const cacheAge = now - (cachedData.cachedAt || 0);
+      
+      if (cacheAge < CACHE_DURATION) {
+        console.log(`✅ KPI 데이터 캐시 사용: ${cacheKey} (나이: ${Math.round(cacheAge/1000)}s)`);
+        setData(cachedData);
+        return;
+      } else {
+        console.log(`⏰ KPI 캐시 만료됨: ${cacheKey} (나이: ${Math.round(cacheAge/1000)}s)`);
+      }
+    }
+    
+    console.log(`🔄 KPI 데이터 새로 가져오기: ${cacheKey}`);
+    console.log('현재 캐시 상태:', Object.keys(dataCache));
+    await fetchKpiData(cacheKey);
+  };
+
+  // 강제 새로고침 (캐시 무시)
+  const refreshData = async () => {
+    const cacheKey = getCacheKey();
+    console.log(`🔄 KPI 데이터 강제 새로고침: ${cacheKey}`);
+    
+    // 캐시에서 제거
+    setDataCache(prev => {
+      const newCache = { ...prev };
+      delete newCache[cacheKey];
+      
+      // 로컬스토리지도 업데이트
+      try {
+        localStorage.setItem('kpi-data-cache', JSON.stringify(newCache));
+      } catch (error) {
+        console.error('KPI 캐시 로컬스토리지 업데이트 실패:', error);
+      }
+      
+      return newCache;
+    });
+    
+    await fetchKpiData(cacheKey);
+  };
 
   const loadFavoriteUsers = () => {
     try {
@@ -126,13 +207,13 @@ export function KpiDashboard() {
     }
   };
 
-  const fetchKpiData = async () => {
+  const fetchKpiData = async (cacheKey: string) => {
     try {
       setData(prev => ({ ...prev, loading: true, error: null }));
       setLoadingStep(0);
 
       setLoadingStep(1); // 프로젝트 정보 조회 중
-      const projectsRes = await fetch('/api/jira/projects');
+      const projectsRes = await fetch(`/api/jira/projects?language=${language}`);
       
       if (!projectsRes.ok) {
         throw new Error('Failed to fetch projects');
@@ -160,7 +241,7 @@ export function KpiDashboard() {
         queryParams = `month=${selectedMonth}`;
       }
       
-      const allIssuesRes = await fetch(`/api/jira/all-issues?${queryParams}`);
+      const allIssuesRes = await fetch(`/api/jira/all-issues?${queryParams}&language=${language}`);
       
       if (!allIssuesRes.ok) {
         throw new Error('Failed to fetch issues');
@@ -283,24 +364,52 @@ export function KpiDashboard() {
 
       setLoadingStep(4); // 완료
 
-      setData({
+      const newData = {
         userKpis,
         totalIssues,
         totalResolved,
         totalUnresolved,
         loading: false,
         error: null,
+        cachedAt: Date.now(), // 캐시 시간 추가
+      };
+      
+      setData(newData);
+      
+      // 캐시에 저장
+      setDataCache(prev => {
+        const newCache = {
+          ...prev,
+          [cacheKey]: newData
+        };
+        console.log(`💾 KPI 데이터 캐시 저장: ${cacheKey}`, newCache);
+        
+        // 로컬스토리지에도 저장
+        try {
+          localStorage.setItem('kpi-data-cache', JSON.stringify(newCache));
+        } catch (error) {
+          console.error('KPI 캐시 로컬스토리지 저장 실패:', error);
+        }
+        
+        return newCache;
       });
       
       setLoadingStep(0); // 리셋
 
     } catch (error) {
       console.error('Error fetching KPI data:', error);
-      setData(prev => ({
-        ...prev,
+      const errorData = {
+        userKpis: [],
+        totalIssues: 0,
+        totalResolved: 0,
+        totalUnresolved: 0,
         loading: false,
         error: t('kpi_fetch_fail_check_config'),
-      }));
+      };
+      
+      setData(errorData);
+      
+      // 에러도 캐시에 저장하지 않음 (재시도 가능하도록)
       setLoadingStep(0);
     }
   };
@@ -516,6 +625,16 @@ export function KpiDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-2 self-start sm:self-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={refreshData}
+              disabled={data.loading}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={`w-4 h-4 ${data.loading ? 'animate-spin' : ''}`} />
+              {t('refresh')}
+            </Button>
             <LanguageSelector />
             <LogoutButton />
             <ThemeToggle />

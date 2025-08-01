@@ -209,7 +209,7 @@ export const ko: TranslationKeys = {
   same_day: '당일',
   one_day: '1일',
   n_weeks: '{}주',
-  n_weeks_n_days: '{}주 {}일',
+  n_weeks_n_days: '{}일',
   n_months: '{}개월',
   loading_step_initializing: '초기화 중...',
   loading_step_projects: '프로젝트 정보를 불러오는 중...',
@@ -268,9 +268,9 @@ export const ko: TranslationKeys = {
   comment_analysis: '댓글 분석 (2개 이상 필요)',
 
   // Missing keys
-  n_months_n_days: '{}개월 {}일',
+  n_months_n_days: '{}일',
   yesterday: '어제',
-  last_n_days: '최근 {}일',
+  last_n_days: '{}일',
   this_month: '이번 달',
   selected_range: '선택된 범위',
   reset_filter: '필터 초기화',
@@ -281,5 +281,29 @@ export const ko: TranslationKeys = {
   avgResolutionTime: '평균 해결 시간',
   resolutionRate: '해결률',
   resolved: '해결됨',
-  unresolved: '미해결'
+  unresolved: '미해결',
+  
+  // UI 공통 요소
+  refresh_data: '데이터 새로고침',
+  refresh: '새로고침',
+
+  // Jira 이슈 타입 번역
+  issue_type_task: '할일',
+  issue_type_story: '스토리',
+  issue_type_bug: '버그',
+  issue_type_epic: '에픽',
+  issue_type_subtask: '하위 작업',
+  issue_type_improvement: '개선',
+  issue_type_new_feature: '새 기능',
+
+  // Jira 상태 번역
+  status_to_do: '할 일',
+  status_in_progress: '진행 중',
+  status_done: '완료',
+  status_open: '열림',
+  status_resolved: '해결됨',
+  status_closed: '종료',
+  status_reopened: '다시 열림',
+  status_review: '검토',
+  status_testing: '테스트'
 };

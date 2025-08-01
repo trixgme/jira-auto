@@ -50,7 +50,7 @@ interface JiraSearchResponse {
 
 export class JiraClient {
   private config: JiraConfig;
-  private headers: HeadersInit;
+  private baseHeaders: HeadersInit;
 
   constructor() {
     const cloudUrl = process.env.JIRA_CLOUD_URL;
@@ -64,14 +64,33 @@ export class JiraClient {
     this.config = { cloudUrl, userEmail, apiToken };
     
     const auth = Buffer.from(`${userEmail}:${apiToken}`).toString('base64');
-    this.headers = {
+    this.baseHeaders = {
       'Authorization': `Basic ${auth}`,
       'Accept': 'application/json',
       'Content-Type': 'application/json',
     };
   }
 
-  async searchIssues(jql: string, startAt = 0, maxResults = 1000): Promise<JiraSearchResponse> {
+  // 언어별 헤더 생성
+  private getHeaders(language?: string): HeadersInit {
+    const headers = { ...this.baseHeaders };
+    
+    // 현재 선택된 언어에 맞는 로케일 설정
+    const langMap: Record<string, string> = {
+      'ko': 'ko-KR', // 한국어 요청 시 한국어로 반환
+      'en': 'en-US'  // 영어 요청 시 영어로 반환
+    };
+    
+    const locale = langMap[language || 'en'] || 'en-US';
+    (headers as any)['Accept-Language'] = locale;
+    (headers as any)['X-Force-Accept-Language'] = locale;
+    
+    console.log(`🌐 Jira API 언어 설정: ${language} → ${locale}`);
+    
+    return headers;
+  }
+
+  async searchIssues(jql: string, startAt = 0, maxResults = 1000, language?: string): Promise<JiraSearchResponse> {
     const url = `${this.config.cloudUrl}/rest/api/3/search`;
     const params = new URLSearchParams({
       jql,
@@ -82,7 +101,7 @@ export class JiraClient {
 
     const response = await fetch(`${url}?${params}`, {
       method: 'GET',
-      headers: this.headers,
+      headers: this.getHeaders(language),
     });
 
     if (!response.ok) {
@@ -92,13 +111,13 @@ export class JiraClient {
     return response.json();
   }
 
-  async getAllIssues(jql: string): Promise<JiraIssue[]> {
+  async getAllIssues(jql: string, language?: string): Promise<JiraIssue[]> {
     const allIssues: JiraIssue[] = [];
     let startAt = 0;
     const maxResults = 100; // 한 번에 100개씩 가져오기
     
     while (true) {
-      const response = await this.searchIssues(jql, startAt, maxResults);
+      const response = await this.searchIssues(jql, startAt, maxResults, language);
       allIssues.push(...response.issues);
       
       // 더 이상 가져올 이슈가 없으면 중단
@@ -112,7 +131,7 @@ export class JiraClient {
     return allIssues;
   }
 
-  async getRecentlyCreatedIssues(daysBack = 7, projectKey?: string): Promise<JiraIssue[]> {
+  async getRecentlyCreatedIssues(daysBack = 7, projectKey?: string, language?: string): Promise<JiraIssue[]> {
     let jql: string;
     
     if (daysBack === 1) {
@@ -132,10 +151,10 @@ export class JiraClient {
       jql = `project = ${projectKey} AND ${jql}`;
     }
     jql += ` ORDER BY created DESC`;
-    return await this.getAllIssues(jql);
+    return await this.getAllIssues(jql, language);
   }
 
-  async getRecentlyCompletedIssues(daysBack = 7, projectKey?: string): Promise<JiraIssue[]> {
+  async getRecentlyCompletedIssues(daysBack = 7, projectKey?: string, language?: string): Promise<JiraIssue[]> {
     let jql: string;
     
     if (daysBack === 1) {
@@ -155,35 +174,35 @@ export class JiraClient {
       jql = `project = ${projectKey} AND ${jql}`;
     }
     jql += ` ORDER BY resolutiondate DESC`;
-    return await this.getAllIssues(jql);
+    return await this.getAllIssues(jql, language);
   }
 
-  async getRecentlyCreatedIssuesByDateRange(startDate: string, endDate: string, projectKey?: string): Promise<JiraIssue[]> {
+  async getRecentlyCreatedIssuesByDateRange(startDate: string, endDate: string, projectKey?: string, language?: string): Promise<JiraIssue[]> {
     let jql = `created >= "${startDate}" AND created <= "${endDate} 23:59"`;
     console.log(`새로운 이슈 날짜 범위 JQL: ${jql}`);
     if (projectKey && projectKey !== 'all') {
       jql = `project = ${projectKey} AND ${jql}`;
     }
     jql += ` ORDER BY created DESC`;
-    return await this.getAllIssues(jql);
+    return await this.getAllIssues(jql, language);
   }
 
-  async getRecentlyCompletedIssuesByDateRange(startDate: string, endDate: string, projectKey?: string): Promise<JiraIssue[]> {
+  async getRecentlyCompletedIssuesByDateRange(startDate: string, endDate: string, projectKey?: string, language?: string): Promise<JiraIssue[]> {
     let jql = `status in (Done, Resolved, Closed) AND resolutiondate >= "${startDate}" AND resolutiondate <= "${endDate} 23:59"`;
     console.log(`완료된 이슈 날짜 범위 JQL: ${jql}`);
     if (projectKey && projectKey !== 'all') {
       jql = `project = ${projectKey} AND ${jql}`;
     }
     jql += ` ORDER BY resolutiondate DESC`;
-    return await this.getAllIssues(jql);
+    return await this.getAllIssues(jql, language);
   }
 
-  async getAllProjects() {
+  async getAllProjects(language?: string) {
     const url = `${this.config.cloudUrl}/rest/api/3/project`;
     
     const response = await fetch(url, {
       method: 'GET',
-      headers: this.headers,
+      headers: this.getHeaders(language),
     });
 
     if (!response.ok) {
@@ -217,7 +236,7 @@ export class JiraClient {
     const response = await fetch(url, {
       method: 'POST',
       headers: {
-        ...this.headers,
+        ...this.baseHeaders,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),
@@ -236,7 +255,7 @@ export class JiraClient {
     
     const response = await fetch(url, {
       method: 'GET',
-      headers: this.headers,
+      headers: this.baseHeaders,
     });
 
     if (!response.ok) {

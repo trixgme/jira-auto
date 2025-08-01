@@ -27,6 +27,7 @@ export function IssueCard({ issue, onDifficultyAnalyzed }: IssueCardProps) {
   const [isAnalyzingComments, setIsAnalyzingComments] = useState(false);
   const [commentAnalysis, setCommentAnalysis] = useState<CommentAnalysis | null>(null);
   const [showCommentAnalysisDialog, setShowCommentAnalysisDialog] = useState(false);
+
   const getStatusColor = (statusCategory: string) => {
     switch (statusCategory.toLowerCase()) {
       case 'done':
@@ -267,6 +268,11 @@ export function IssueCard({ issue, onDifficultyAnalyzed }: IssueCardProps) {
             {issue.fields.project.name}
           </span>
           <div className="flex gap-1 flex-wrap">
+            {issue.fields.issuetype && (
+              <Badge variant="outline" className="text-[10px] sm:text-xs px-1 sm:px-2 py-0">
+                {issue.fields.issuetype.name}
+              </Badge>
+            )}
             <Badge className={`${getStatusColor(issue.fields.status.statusCategory.key)} text-white text-[10px] sm:text-xs px-1 sm:px-2 py-0`}>
               {issue.fields.status.name}
             </Badge>

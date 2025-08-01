@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function generateChartData(issues: JiraIssue[]): ChartData {
+function generateChartData(issues: JiraIssue[], language: string = 'ko'): ChartData {
   // 프로젝트별 분포
   const projectCounts = issues.reduce((acc, issue) => {
     const projectName = issue.fields.project.name;
@@ -196,9 +196,55 @@ async function generateCompletedIssuesReport(
 
   const { issuesSummary, stats, isLimited } = getIssueSummary();
 
+  const getLocalizedText = (key: string, value?: any) => {
+    const texts: Record<string, Record<string, string>> = {
+      'ko': {
+        'period_days': `최근 ${value}일`,
+        'all_projects': '전체 프로젝트',
+        'basic_info': '기본 정보',
+        'item': '항목',
+        'details': '세부사항',
+        'project': '프로젝트',
+        'analysis_period': '분석 기간',
+        'completed_issues': '완료된 이슈',
+        'statistics_summary': '통계 요약',
+        'by_project': '프로젝트별',
+        'by_type': '유형별',
+        'by_priority': '우선순위별',
+        'by_assignee': '담당자별',
+        'completed_issues_list': '완료된 이슈 목록',
+        'completed': '완료',
+        'days': '일',
+        'labels': '라벨'
+      },
+      'en': {
+        'period_days': `Last ${value} days`,
+        'all_projects': 'All Projects',
+        'basic_info': 'Basic Information',
+        'item': 'Item',
+        'details': 'Details',
+        'project': 'Project',
+        'analysis_period': 'Analysis Period',
+        'completed_issues': 'Completed Issues',
+        'statistics_summary': 'Statistics Summary',
+        'by_project': 'By Project',
+        'by_type': 'By Type',
+        'by_priority': 'By Priority',
+        'by_assignee': 'By Assignee',
+        'completed_issues_list': 'Completed Issues List',
+        'completed': 'Completed',
+        'days': 'days',
+        'labels': 'Labels'
+      }
+    };
+
+    const langTexts = texts[language] || texts['en'];
+    return langTexts[key] || key;
+  };
+
   const periodText = dateRange 
     ? `${dateRange.startDate} ~ ${dateRange.endDate}`
-    : language === 'en' ? `Last ${period} days` : `최근 ${period}일`;
+    : getLocalizedText('period_days', period);
 
   // 우선순위별 이모지 반환 함수
   const getPriorityEmoji = (priority: string): string => {
@@ -212,31 +258,99 @@ async function generateCompletedIssuesReport(
     }
   };
 
-  const prompt = `${language === 'en' ? 'Please create a beautiful and professional markdown report in English' : '아름답고 전문적인 마크다운 보고서를 한국어로 작성해주세요'} for Jira issues completed during ${periodText}.
+  // 언어별 시스템 메시지 구성
+  const getSystemMessage = (language: string) => {
+    const systemMessages: Record<string, string> = {
+      'en': 'As a project management and data analysis expert, analyze Jira issue data to create a practical and insightful markdown report. Discover patterns and trends and provide actionable improvements. Write the entire report in English.',
+      'ko': '프로젝트 관리 및 데이터 분석 전문가로서 Jira 이슈 데이터를 분석하여 실용적이고 통찰력 있는 마크다운 보고서를 작성합니다. 패턴과 트렌드를 발견하고 실행 가능한 개선안을 제공합니다. 전체 보고서를 한국어로 작성하세요.'
+    };
+    
+    return systemMessages[language] || systemMessages['en'];
+  };
 
-## 📋 ${language === 'en' ? 'Basic Information' : '기본 정보'}
-| ${language === 'en' ? 'Item' : '항목'} | ${language === 'en' ? 'Details' : '세부사항'} |
+  // 언어별 프롬프트 구성
+  const getPrompt = () => {
+    const baseData = `
+## 📋 ${getLocalizedText('basic_info')}
+| ${getLocalizedText('item')} | ${getLocalizedText('details')} |
 |------|----------|
-| 🎯 **${language === 'en' ? 'Project' : '프로젝트'}** | ${project === 'all' ? (language === 'en' ? 'All Projects' : '전체 프로젝트') : project} |
-| 📅 **${language === 'en' ? 'Analysis Period' : '분석 기간'}** | ${periodText} |
-| ✅ **${language === 'en' ? 'Completed Issues' : '완료된 이슈'}** | ${issues.length}${language === 'en' ? '' : '개'} |
+| 🎯 **${getLocalizedText('project')}** | ${project === 'all' ? getLocalizedText('all_projects') : project} |
+| 📅 **${getLocalizedText('analysis_period')}** | ${periodText} |
+| ✅ **${getLocalizedText('completed_issues')}** | ${issues.length}${language === 'en' ? '' : '개'} |
 
-## 📊 통계 요약
-**프로젝트별:** ${stats.byProject.map(([name, count]) => `${name}(${count})`).join(', ')}
-**유형별:** ${stats.byType.map(([name, count]) => `${name}(${count})`).join(', ')}
-**우선순위별:** ${stats.byPriority.map(([name, count]) => `${name}(${count})`).join(', ')}
-**담당자별:** ${stats.byAssignee.slice(0, 5).map(([name, count]) => `${name}(${count})`).join(', ')}
+## 📊 ${getLocalizedText('statistics_summary')}
+**${getLocalizedText('by_project')}:** ${stats.byProject.map(([name, count]) => `${name}(${count})`).join(', ')}
+**${getLocalizedText('by_type')}:** ${stats.byType.map(([name, count]) => `${name}(${count})`).join(', ')}
+**${getLocalizedText('by_priority')}:** ${stats.byPriority.map(([name, count]) => `${name}(${count})`).join(', ')}
+**${getLocalizedText('by_assignee')}:** ${stats.byAssignee.slice(0, 5).map(([name, count]) => `${name}(${count})`).join(', ')}
 
-## 📋 완료된 이슈 목록 (${issuesSummary.length}개)
+## 📋 ${getLocalizedText('completed_issues_list')} (${issuesSummary.length})
 
 ${issuesSummary.map((issue, index) => {
-  const resolvedDate = issue.resolved ? new Date(issue.resolved).toLocaleDateString('ko-KR') : 'N/A';
+  const resolvedDate = issue.resolved ? new Date(issue.resolved).toLocaleDateString(language === 'en' ? 'en-US' : 'ko-KR') : 'N/A';
   const duration = issue.resolved ? Math.ceil((new Date(issue.resolved).getTime() - new Date(issue.created).getTime()) / (1000 * 60 * 60 * 24)) : 'N/A';
   
   return `**${index + 1}. [${issue.key}]** ${issue.summary}
 - ${issue.type} | ${issue.priority} | ${issue.assignee} | ${issue.project}
-- 완료: ${resolvedDate} (${duration}일)${issue.description ? ` | ${issue.description}` : ''}${issue.labels.length > 0 ? ` | 라벨: ${issue.labels.join(', ')}` : ''}`;
-}).join('\n')}
+- ${getLocalizedText('completed')}: ${resolvedDate} (${duration}${getLocalizedText('days')})${issue.description ? ` | ${issue.description}` : ''}${issue.labels.length > 0 ? ` | ${getLocalizedText('labels')}: ${issue.labels.join(', ')}` : ''}`;
+}).join('\n')}`;
+
+    if (language === 'en') {
+      return `Please create a beautiful and professional markdown report in English for Jira issues completed during ${periodText}.
+
+${baseData}
+
+**Please create a markdown report with the following structure:**
+
+# 🚀 Jira Issue Completion Analysis Report
+> 📊 Performance Analysis for ${periodText}
+
+## 🎯 Executive Summary
+Key insights and major metrics
+
+## 📊 Completion Status Analysis
+- 📈 Overall statistics and project-wise status
+- 🏷️ Issue type distribution and characteristics
+- 🚨 Priority-wise handling status
+
+## 🏆 Key Achievements
+- ⭐ TOP 5 important completed issues
+- 💪 Resolution process for complex issues
+- ⚡ Efficiently handled issues
+
+## 📈 Productivity Analysis
+- 👥 Team member contributions and performance
+- ⏱️ Average processing time analysis
+- 🏢 Project-wise productivity comparison
+
+## 🔍 Patterns and Trends
+- 📈 Changes in processing patterns
+- 🔄 Recurring issue types
+- 🎯 Improvement opportunities identified
+
+## 💡 Improvement Suggestions
+- 🎯 Key findings
+- 🚀 Productivity enhancement strategies
+- 🤝 Team collaboration improvements
+
+## 📋 Action Items
+- [ ] Immediate action items
+- [ ] Short-term improvement tasks (1-2 weeks)
+- [ ] Medium-term strategic tasks (1-3 months)
+
+## 🎯 Conclusion
+Period performance evaluation and future plans
+
+---
+*📅 ${new Date().toLocaleString('en-US')} | 🤖 GPT-4 Analysis*
+
+Please create a detailed and practical report using markdown formatting (tables, emojis, quotes, checkboxes, etc.).`;
+
+    } else {
+      // 한국어 및 기타 언어
+      return `아름답고 전문적인 마크다운 보고서를 한국어로 작성해주세요. ${periodText} 기간 동안 완료된 Jira 이슈들에 대한 분석입니다.
+
+${baseData}
 
 **다음 구조로 마크다운 보고서를 작성해주세요:**
 
@@ -280,9 +394,13 @@ ${issuesSummary.map((issue, index) => {
 기간별 성과 평가 및 향후 계획
 
 ---
-*📅 ${new Date().toLocaleString('ko-KR')} | 🤖 GPT-4.1 분석*
+*📅 ${new Date().toLocaleString('ko-KR')} | 🤖 GPT-4 분석*
 
 마크다운 형식(테이블, 이모지, 인용문, 체크박스 등)을 활용하여 상세하고 실용적인 보고서를 작성해주세요.`;
+    }
+  };
+
+  const prompt = getPrompt();
 
 
   // 모든 이슈 포함 - 필드별 토큰 최적화 적용
@@ -301,9 +419,7 @@ ${issuesSummary.map((issue, index) => {
         messages: [
           {
             role: 'system',
-            content: language === 'en' 
-              ? 'As a project management and data analysis expert, analyze Jira issue data to create a practical and insightful markdown report. Discover patterns and trends and provide actionable improvements. Write the entire report in English.'
-              : '프로젝트 관리 및 데이터 분석 전문가로서 Jira 이슈 데이터를 분석하여 실용적이고 통찰력 있는 마크다운 보고서를 작성합니다. 패턴과 트렌드를 발견하고 실행 가능한 개선안을 제공합니다. 전체 보고서를 한국어로 작성하세요.'
+            content: getSystemMessage(language)
           },
           {
             role: 'user',
@@ -328,7 +444,7 @@ ${issuesSummary.map((issue, index) => {
     const data = await response.json();
     
     if (data.choices && data.choices[0] && data.choices[0].message) {
-      const chartData = generateChartData(issues);
+      const chartData = generateChartData(issues, language);
       return { 
         report: data.choices[0].message.content, 
         reportType: 'ai',

@@ -68,32 +68,7 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
   const getLocale = () => {
     const localeMap: { [key: string]: string } = {
       'ko': 'ko-KR',
-      'en': 'en-US',
-      'ja': 'ja-JP',
-      'zh': 'zh-CN',
-      'es': 'es-ES',
-      'fr': 'fr-FR',
-      'de': 'de-DE',
-      'pt': 'pt-BR',
-      'ru': 'ru-RU',
-      'ar': 'ar-SA',
-      'hi': 'hi-IN',
-      'vi': 'vi-VN',
-      'it': 'it-IT',
-      'tr': 'tr-TR',
-      'pl': 'pl-PL',
-      'nl': 'nl-NL',
-      'sv': 'sv-SE',
-      'da': 'da-DK',
-      'no': 'no-NO',
-      'fi': 'fi-FI',
-      'th': 'th-TH',
-      'id': 'id-ID',
-      'cs': 'cs-CZ',
-      'hu': 'hu-HU',
-      'ro': 'ro-RO',
-      'bg': 'bg-BG',
-      'he': 'he-IL'
+      'en': 'en-US'
     };
     return localeMap[language] || 'en-US';
   };
@@ -397,7 +372,7 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                         />
                         <YAxis fontSize={9} />
                         <Tooltip 
-                          labelFormatter={(value) => `${t('date_label')}: ${new Date(value).toLocaleDateString('ko-KR')}`}
+                          labelFormatter={(value) => `${t('date_label')}: ${new Date(value).toLocaleDateString(getLocale())}`}
                           contentStyle={{ fontSize: '12px' }}
                         />
                         <Line 

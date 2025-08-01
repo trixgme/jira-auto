@@ -13,7 +13,7 @@ import { IssuesChart } from '@/components/issues-chart';
 import { Navigation } from '@/components/navigation';
 import { LogoutButton } from '@/components/logout-button';
 import { LanguageSelector } from '@/components/language-selector';
-import { Search, X, FileText } from 'lucide-react';
+import { Search, X, FileText, RefreshCw } from 'lucide-react';
 import { LoadingProgress } from '@/components/loading-progress';
 import { ReportDialog } from '@/components/report-dialog';
 import { DateRangePicker } from '@/components/date-range-picker';
@@ -27,11 +27,29 @@ interface DashboardData {
   projects: JiraProject[];
   loading: boolean;
   error: string | null;
+  cachedAt?: number;
 }
 
 export function Dashboard() {
   const { t, language } = useLanguage();
   
+  // 데이터 캐시 상태 (로컬스토리지에서 복원)
+  const [dataCache, setDataCache] = useState<Record<string, DashboardData>>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('dashboard-data-cache');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          console.log('💾 로컬스토리지에서 대시보드 캐시 복원:', Object.keys(parsed));
+          return parsed;
+        }
+      } catch (error) {
+        console.error('대시보드 캐시 복원 실패:', error);
+      }
+    }
+    return {};
+  });
+
   const [data, setData] = useState<DashboardData>({
     newIssues: [],
     completedIssues: [],
@@ -70,21 +88,68 @@ export function Dashboard() {
     period?: number;
   } | null>(null);
 
+  // 캐시 키 생성 함수
+  const getCacheKey = useCallback(() => {
+    if (dateRange.startDate && dateRange.endDate) {
+      const startStr = dateRange.startDate.toISOString().split('T')[0];
+      const endStr = dateRange.endDate.toISOString().split('T')[0];
+      return `${language}-${selectedProject}-${startStr}-${endStr}`;
+    }
+    return `${language}-${selectedProject}-${daysBack}days`;
+  }, [language, selectedProject, daysBack, dateRange.startDate, dateRange.endDate]);
+
+  // 로컬스토리지에 캐시 저장 (용량 제한 관리)
+  const saveCacheToStorage = useCallback((newCache: Record<string, DashboardData>) => {
+    if (typeof window !== 'undefined') {
+      try {
+        // 캐시 항목 수 제한 (최대 5개)
+        const cacheEntries = Object.entries(newCache);
+        if (cacheEntries.length > 5) {
+          // 가장 오래된 캐시 삭제
+          cacheEntries.sort((a, b) => (b[1].cachedAt || 0) - (a[1].cachedAt || 0));
+          const limitedCache = Object.fromEntries(cacheEntries.slice(0, 5));
+          localStorage.setItem('dashboard-data-cache', JSON.stringify(limitedCache));
+          console.log('💾 대시보드 캐시 용량 제한으로 5개 항목만 유지');
+        } else {
+          localStorage.setItem('dashboard-data-cache', JSON.stringify(newCache));
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+          console.warn('⚠️ 로컬스토리지 용량 초과 - 캐시 초기화');
+          // 용량 초과 시 모든 캐시 삭제
+          localStorage.removeItem('dashboard-data-cache');
+          // 현재 데이터만 저장
+          const currentKey = getCacheKey();
+          const currentData = newCache[currentKey];
+          if (currentData) {
+            try {
+              localStorage.setItem('dashboard-data-cache', JSON.stringify({ [currentKey]: currentData }));
+            } catch (e) {
+              console.error('현재 캐시 저장도 실패:', e);
+            }
+          }
+        } else {
+          console.error('대시보드 캐시 저장 실패:', error);
+        }
+      }
+    }
+  }, [getCacheKey]);
+
   useEffect(() => {
     fetchProjects();
-  }, []);
+  }, [language]);
 
   useEffect(() => {
     if (data.projects.length > 0) {
-      fetchDashboardData();
+      fetchDashboardDataWithCache();
     }
-  }, [daysBack, selectedProject, data.projects.length, dateRange]);
+  }, [language, daysBack, selectedProject, data.projects.length, dateRange.startDate, dateRange.endDate]);
 
 
   const fetchProjects = async () => {
     try {
       setLoadingStep(0);
-      const response = await fetch('/api/jira/projects');
+      const response = await fetch(`/api/jira/projects?language=${language}`);
       if (!response.ok) {
         throw new Error('Failed to fetch projects');
       }
@@ -99,7 +164,35 @@ export function Dashboard() {
     }
   };
 
-  const fetchDashboardData = async () => {
+  // 캐시를 확인하고 필요시 새 데이터를 가져오는 함수
+  const fetchDashboardDataWithCache = async () => {
+    const cacheKey = getCacheKey();
+    const CACHE_DURATION = 5 * 60 * 1000; // 5분 캐시 유지
+    
+    console.log(`🔍 대시보드 데이터 요청: ${cacheKey}`);
+    
+    // 캐시된 데이터 확인
+    const cachedData = dataCache[cacheKey];
+    if (cachedData && !cachedData.loading && !cachedData.error) {
+      const now = Date.now();
+      const cacheAge = now - (cachedData.cachedAt || 0);
+      
+      if (cacheAge < CACHE_DURATION) {
+        console.log(`✅ 대시보드 데이터 캐시 사용: ${cacheKey} (나이: ${Math.round(cacheAge/1000)}s)`);
+        setData(cachedData);
+        return;
+      } else {
+        console.log(`⏰ 대시보드 캐시 만료: ${cacheKey} (나이: ${Math.round(cacheAge/1000)}s)`);
+      }
+    } else {
+      console.log(`❌ 대시보드 캐시 없음: ${cacheKey}`);
+    }
+    
+    // 새 데이터 가져오기
+    await fetchDashboardData(cacheKey);
+  };
+
+  const fetchDashboardData = async (cacheKey: string) => {
     try {
       setData(prev => ({ ...prev, loading: true, error: null }));
       setLoadingStep(0);
@@ -127,7 +220,7 @@ export function Dashboard() {
       console.log('모든 이슈를 가져오는 중... (시간이 조금 걸릴 수 있습니다)');
       
       setLoadingStep(1); // 새로운 이슈 조회 중
-      const newIssuesRes = await fetch(`/api/jira/new-issues?${dateParam.slice(1)}${projectParam}`);
+      const newIssuesRes = await fetch(`/api/jira/new-issues?${dateParam.slice(1)}${projectParam}&language=${language}`);
       
       if (!newIssuesRes.ok) {
         throw new Error('Failed to fetch new issues');
@@ -136,7 +229,7 @@ export function Dashboard() {
       const newIssuesData = await newIssuesRes.json();
       
       setLoadingStep(2); // 완료된 이슈 조회 중
-      const completedIssuesRes = await fetch(`/api/jira/completed-issues?${dateParam.slice(1)}${projectParam}`);
+      const completedIssuesRes = await fetch(`/api/jira/completed-issues?${dateParam.slice(1)}${projectParam}&language=${language}`);
       
       if (!completedIssuesRes.ok) {
         throw new Error('Failed to fetch completed issues');  
@@ -238,14 +331,26 @@ export function Dashboard() {
         console.log(`날짜 범위 클라이언트 필터링 후 - 새로운 이슈: ${filteredNewIssues.length}개, 완료된 이슈: ${filteredCompletedIssues.length}개`);
       }
 
-      setData(prev => ({
-        ...prev,
+      const dashboardData: DashboardData = {
         newIssues: filteredNewIssues,
         completedIssues: filteredCompletedIssues,
+        projects: data.projects, // 프로젝트 정보 유지
         loading: false,
         error: null,
-      }));
+        cachedAt: Date.now()
+      };
+
+      setData(dashboardData);
       
+        // 캐시에 저장
+        const newCache = {
+          ...dataCache,
+          [cacheKey]: dashboardData
+        };
+        setDataCache(newCache);
+        saveCacheToStorage(newCache);
+      
+      console.log(`💾 대시보드 데이터 캐시 저장: ${cacheKey}`);
       setLoadingStep(0); // 완료
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -389,6 +494,21 @@ export function Dashboard() {
     }
   };
 
+  // 캐시 무시하고 새로고침
+  const refreshData = async () => {
+    const cacheKey = getCacheKey();
+    console.log(`🔄 대시보드 데이터 새로고침: ${cacheKey}`);
+    
+    // 해당 캐시 삭제
+    const newCache = { ...dataCache };
+    delete newCache[cacheKey];
+    setDataCache(newCache);
+    saveCacheToStorage(newCache);
+    
+    // 새 데이터 가져오기
+    await fetchDashboardData(cacheKey);
+  };
+
   const DaysSelector = () => (
     <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
       <div className="flex gap-2 items-center">
@@ -474,6 +594,15 @@ export function Dashboard() {
             </div>
           </div>
           <div className="flex items-center gap-2 self-start sm:self-auto">
+            <Button
+              onClick={refreshData}
+              disabled={data.loading}
+              size="sm"
+              variant="outline"
+              title={t('refresh_data')}
+            >
+              <RefreshCw className={`h-4 w-4 ${data.loading ? 'animate-spin' : ''}`} />
+            </Button>
             <LanguageSelector />
             <LogoutButton />
             <ThemeToggle />

@@ -1,4 +1,4 @@
-export type Language = 'ko' | 'en' | 'ja' | 'zh' | 'es' | 'fr' | 'de' | 'pt' | 'ru' | 'ar' | 'hi' | 'vi' | 'it' | 'tr' | 'pl' | 'nl' | 'sv' | 'da' | 'no' | 'fi' | 'th' | 'id' | 'cs' | 'hu' | 'ro' | 'bg' | 'he';
+export type Language = 'ko' | 'en';
 
 export interface TranslationKeys {
   // Authentication
@@ -282,4 +282,28 @@ export interface TranslationKeys {
   resolutionRate: string;
   resolved: string;
   unresolved: string;
+
+  // UI 공통 요소
+  refresh_data: string;
+  refresh: string;
+
+  // Jira 이슈 타입 번역
+  issue_type_task: string;
+  issue_type_story: string;
+  issue_type_bug: string;
+  issue_type_epic: string;
+  issue_type_subtask: string;
+  issue_type_improvement: string;
+  issue_type_new_feature: string;
+
+  // Jira 상태 번역
+  status_to_do: string;
+  status_in_progress: string;
+  status_done: string;
+  status_open: string;
+  status_resolved: string;
+  status_closed: string;
+  status_reopened: string;
+  status_review: string;
+  status_testing: string;
 }
