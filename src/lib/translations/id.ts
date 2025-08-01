@@ -231,5 +231,12 @@ export const id: TranslationKeys = {
   this_month: 'This month',
   selected_range: 'Selected range',
   reset_filter: 'Reset filter',
-  apply: 'Apply'
+  apply: 'Apply',
+  
+  // KPI Dashboard missing keys
+  assigned: 'Ditugaskan',
+  avgResolutionTime: 'Waktu Penyelesaian Rata-rata',
+  resolutionRate: 'Tingkat Penyelesaian',
+  resolved: 'Diselesaikan',
+  unresolved: 'Belum Diselesaikan'
 };

@@ -274,5 +274,12 @@ export const ar: TranslationKeys = {
   this_month: 'هذا الشهر',
   selected_range: 'النطاق المحدد',
   reset_filter: 'إعادة تعيين المرشح',
-  apply: 'تطبيق'
+  apply: 'تطبيق',
+  
+  // KPI Dashboard missing keys
+  assigned: 'مُعيَّن',
+  avgResolutionTime: 'متوسط وقت الحل',
+  resolutionRate: 'معدل الحل',
+  resolved: 'محلول',
+  unresolved: 'غير محلول'
 };

@@ -275,4 +275,11 @@ export interface TranslationKeys {
   selected_range: string;
   reset_filter: string;
   apply: string;
+  
+  // KPI Dashboard missing keys
+  assigned: string;
+  avgResolutionTime: string;
+  resolutionRate: string;
+  resolved: string;
+  unresolved: string;
 }

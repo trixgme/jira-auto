@@ -231,5 +231,12 @@ export const hu: TranslationKeys = {
   this_month: 'This month',
   selected_range: 'Selected range',
   reset_filter: 'Reset filter',
-  apply: 'Apply'
+  apply: 'Apply',
+  
+  // KPI Dashboard missing keys
+  assigned: 'Hozzárendelve',
+  avgResolutionTime: 'Átlagos Megoldási Idő',
+  resolutionRate: 'Megoldási Arány',
+  resolved: 'Megoldva',
+  unresolved: 'Megoldatlan'
 };

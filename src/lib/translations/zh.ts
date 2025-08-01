@@ -276,5 +276,12 @@ export const zh: TranslationKeys = {
   created_date_range: '从{}到{}创建',
   percent_completed: '{}%完成',
   n_months_n_days: '{}个月{}天',
-  last_n_days: '过去{}天'
+  last_n_days: '过去{}天',
+  
+  // KPI Dashboard missing keys
+  assigned: '已分配',
+  avgResolutionTime: '平均解决时间',
+  resolutionRate: '解决率',
+  resolved: '已解决',
+  unresolved: '未解决'
 };

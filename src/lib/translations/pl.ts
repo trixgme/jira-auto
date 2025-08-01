@@ -231,5 +231,12 @@ export const pl: TranslationKeys = {
   this_month: 'This month',
   selected_range: 'Selected range',
   reset_filter: 'Reset filter',
-  apply: 'Apply'
+  apply: 'Apply',
+  
+  // KPI Dashboard missing keys
+  assigned: 'Przypisane',
+  avgResolutionTime: 'Średni Czas Rozwiązania',
+  resolutionRate: 'Wskaźnik Rozwiązania',
+  resolved: 'Rozwiązane',
+  unresolved: 'Nierozwiązane'
 };

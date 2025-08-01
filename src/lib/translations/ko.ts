@@ -274,8 +274,12 @@ export const ko: TranslationKeys = {
   this_month: '이번 달',
   selected_range: '선택된 범위',
   reset_filter: '필터 초기화',
-  apply: '적용'
-,
+  apply: '적용',
 
-  // 누락된 키들 (자동 추가)
+  // KPI 대시보드 누락 키들
+  assigned: '할당됨',
+  avgResolutionTime: '평균 해결 시간',
+  resolutionRate: '해결률',
+  resolved: '해결됨',
+  unresolved: '미해결'
 };

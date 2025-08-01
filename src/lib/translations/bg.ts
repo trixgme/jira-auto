@@ -231,5 +231,12 @@ export const bg: TranslationKeys = {
   this_month: 'This month',
   selected_range: 'Selected range',
   reset_filter: 'Reset filter',
-  apply: 'Apply'
+  apply: 'Apply',
+  
+  // KPI Dashboard missing keys
+  assigned: 'Възложено',
+  avgResolutionTime: 'Средно време за решение',
+  resolutionRate: 'Процент на решение',
+  resolved: 'Решено',
+  unresolved: 'Нерешено'
 };

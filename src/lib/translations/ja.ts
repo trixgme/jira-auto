@@ -276,5 +276,12 @@ export const ja: TranslationKeys = {
   created_date_range: '{}から{}まで作成',
   percent_completed: '{}%完了',
   n_months_n_days: '{}ヶ月{}日',
-  last_n_days: '過去{}日'
+  last_n_days: '過去{}日',
+  
+  // KPI Dashboard missing keys
+  assigned: '割り当て済み',
+  avgResolutionTime: '平均解決時間',
+  resolutionRate: '解決率',
+  resolved: '解決済み',
+  unresolved: '未解決'
 };

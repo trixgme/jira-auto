@@ -276,5 +276,12 @@ export const vi: TranslationKeys = {
   created_date_range: 'Được tạo từ {} đến {}',
   percent_completed: '{}% hoàn thành',
   n_months_n_days: '{} tháng {} ngày',
-  last_n_days: '{} ngày qua'
+  last_n_days: '{} ngày qua',
+  
+  // KPI Dashboard missing keys
+  assigned: 'Đã giao',
+  avgResolutionTime: 'Thời gian giải quyết trung bình',
+  resolutionRate: 'Tỷ lệ giải quyết',
+  resolved: 'Đã giải quyết',
+  unresolved: 'Chưa giải quyết'
 };

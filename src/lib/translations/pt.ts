@@ -276,5 +276,12 @@ export const pt: TranslationKeys = {
   created_date_range: 'Criado de {} até {}',
   percent_completed: '{}% concluído',
   n_months_n_days: '{} meses {} dias',
-  last_n_days: 'Últimos {} dias'
+  last_n_days: 'Últimos {} dias',
+  
+  // KPI Dashboard missing keys
+  assigned: 'Atribuído',
+  avgResolutionTime: 'Tempo Médio de Resolução',
+  resolutionRate: 'Taxa de Resolução',
+  resolved: 'Resolvido',
+  unresolved: 'Não Resolvido'
 };

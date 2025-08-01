@@ -231,5 +231,12 @@ export const th: TranslationKeys = {
   this_month: 'This month',
   selected_range: 'Selected range',
   reset_filter: 'Reset filter',
-  apply: 'Apply'
+  apply: 'Apply',
+  
+  // KPI Dashboard missing keys
+  assigned: 'ได้รับมอบหมาย',
+  avgResolutionTime: 'เวลาแก้ไขเฉลี่ย',
+  resolutionRate: 'อัตราการแก้ไข',
+  resolved: 'แก้ไขแล้ว',
+  unresolved: 'ยังไม่แก้ไข'
 };

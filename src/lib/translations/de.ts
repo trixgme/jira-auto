@@ -275,5 +275,12 @@ export const de: TranslationKeys = {
   user_assigned_issues: 'Zugewiesene Aufgaben für {}',
   month_assigned_issues_list: '{} zugewiesene Aufgaben in {}',
   n_months_n_days: '{} Monate {} Tage',
-  last_n_days: 'Letzte {} Tage'
+  last_n_days: 'Letzte {} Tage',
+  
+  // KPI Dashboard missing keys
+  assigned: 'Zugewiesen',
+  avgResolutionTime: 'Durchschnittliche Lösungszeit',
+  resolutionRate: 'Lösungsrate',
+  resolved: 'Gelöst',
+  unresolved: 'Ungelöst'
 };

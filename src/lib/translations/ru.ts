@@ -276,5 +276,12 @@ export const ru: TranslationKeys = {
   created_date_range: 'Создано с {} по {}',
   percent_completed: '{}% завершено',
   n_months_n_days: '{} месяцев {} дней',
-  last_n_days: 'Последние {} дней'
+  last_n_days: 'Последние {} дней',
+  
+  // KPI Dashboard missing keys
+  assigned: 'Назначено',
+  avgResolutionTime: 'Среднее время решения',
+  resolutionRate: 'Коэффициент решения',
+  resolved: 'Решено',
+  unresolved: 'Нерешено'
 };

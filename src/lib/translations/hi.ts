@@ -276,5 +276,12 @@ export const hi: TranslationKeys = {
   created_date_range: '{} से {} तक बनाया गया',
   percent_completed: '{}% पूर्ण',
   n_months_n_days: '{} महीने {} दिन',
-  last_n_days: 'पिछले {} दिन'
+  last_n_days: 'पिछले {} दिन',
+  
+  // KPI Dashboard missing keys
+  assigned: 'सौंपा गया',
+  avgResolutionTime: 'औसत समाधान समय',
+  resolutionRate: 'समाधान दर',
+  resolved: 'हल किया गया',
+  unresolved: 'अनसुलझा'
 };
