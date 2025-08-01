@@ -22,13 +22,15 @@ export interface IssueDifficulty {
 
 export interface CommentAnalysis {
   score: number;
-  analysisKo: string;
-  analysisEn: string;
+  analysis: string; // New unified analysis field
+  analysisKo?: string; // Legacy field for backward compatibility
+  analysisEn?: string; // Legacy field for backward compatibility
   isHardToDetermine: boolean;
   keyIssues: string[];
   recommendations: string[];
-  scoreDescriptionKo: string;
-  scoreDescriptionEn: string;
+  scoreDescription: string; // New unified scoreDescription field
+  scoreDescriptionKo?: string; // Legacy field for backward compatibility
+  scoreDescriptionEn?: string; // Legacy field for backward compatibility
   analyzedAt?: Date;
 }
 

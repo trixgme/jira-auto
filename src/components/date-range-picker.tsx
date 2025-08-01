@@ -18,11 +18,45 @@ interface DateRangePickerProps {
 }
 
 export function DateRangePicker({ value, onChange, className }: DateRangePickerProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedRange, setSelectedRange] = useState<DateRange>(value);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // 언어별 로케일 매핑
+  const getLocale = () => {
+    const localeMap: { [key: string]: string } = {
+      'ko': 'ko-KR',
+      'en': 'en-US',
+      'ja': 'ja-JP',
+      'zh': 'zh-CN',
+      'es': 'es-ES',
+      'fr': 'fr-FR',
+      'de': 'de-DE',
+      'pt': 'pt-BR',
+      'ru': 'ru-RU',
+      'ar': 'ar-SA',
+      'hi': 'hi-IN',
+      'vi': 'vi-VN',
+      'it': 'it-IT',
+      'tr': 'tr-TR',
+      'pl': 'pl-PL',
+      'nl': 'nl-NL',
+      'sv': 'sv-SE',
+      'da': 'da-DK',
+      'no': 'no-NO',
+      'fi': 'fi-FI',
+      'th': 'th-TH',
+      'id': 'id-ID',
+      'cs': 'cs-CZ',
+      'hu': 'hu-HU',
+      'ro': 'ro-RO',
+      'bg': 'bg-BG',
+      'he': 'he-IL'
+    };
+    return localeMap[language] || 'en-US';
+  };
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -280,7 +314,7 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
                   <h3 className="font-medium">
-                    {currentMonth.toLocaleDateString('ko-KR', {
+                    {currentMonth.toLocaleDateString(getLocale(), {
                       year: 'numeric',
                       month: 'long'
                     })}

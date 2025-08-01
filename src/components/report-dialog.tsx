@@ -60,9 +60,43 @@ interface ReportDialogProps {
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1', '#d084d0'];
 
 export function ReportDialog({ open, onOpenChange, reportData, title = "완료된 이슈 AI 분석 보고서" }: ReportDialogProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+
+  // 언어별 로케일 매핑
+  const getLocale = () => {
+    const localeMap: { [key: string]: string } = {
+      'ko': 'ko-KR',
+      'en': 'en-US',
+      'ja': 'ja-JP',
+      'zh': 'zh-CN',
+      'es': 'es-ES',
+      'fr': 'fr-FR',
+      'de': 'de-DE',
+      'pt': 'pt-BR',
+      'ru': 'ru-RU',
+      'ar': 'ar-SA',
+      'hi': 'hi-IN',
+      'vi': 'vi-VN',
+      'it': 'it-IT',
+      'tr': 'tr-TR',
+      'pl': 'pl-PL',
+      'nl': 'nl-NL',
+      'sv': 'sv-SE',
+      'da': 'da-DK',
+      'no': 'no-NO',
+      'fi': 'fi-FI',
+      'th': 'th-TH',
+      'id': 'id-ID',
+      'cs': 'cs-CZ',
+      'hu': 'hu-HU',
+      'ro': 'ro-RO',
+      'bg': 'bg-BG',
+      'he': 'he-IL'
+    };
+    return localeMap[language] || 'en-US';
+  };
 
   const handleCopy = async () => {
     if (!reportData?.report) return;
@@ -189,7 +223,7 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                   <CardContent>
                     <p className="text-sm text-muted-foreground">
                       {reportData.dateRange 
-                        ? `${new Date(reportData.dateRange.startDate).toLocaleDateString('ko-KR')} ~ ${new Date(reportData.dateRange.endDate).toLocaleDateString('ko-KR')} (${Math.floor((new Date(reportData.dateRange.endDate).getTime() - new Date(reportData.dateRange.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1}일간)`
+                        ? `${new Date(reportData.dateRange.startDate).toLocaleDateString(getLocale())} ~ ${new Date(reportData.dateRange.endDate).toLocaleDateString(getLocale())} (${Math.floor((new Date(reportData.dateRange.endDate).getTime() - new Date(reportData.dateRange.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1}${t('days')})`
                         : t('last_n_days', reportData.period)
                       }
                     </p>

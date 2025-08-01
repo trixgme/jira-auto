@@ -443,7 +443,7 @@ export function Dashboard() {
         </button>
       )}
     </div>
-  ), [searchQuery, handleSearchChange, handleSearchKeyDown, handleSearchClear]);
+  ), [searchQuery, handleSearchChange, handleSearchKeyDown, handleSearchClear, t]);
 
   if (data.error) {
     return (

@@ -299,7 +299,7 @@ export function KpiDashboard() {
       setData(prev => ({
         ...prev,
         loading: false,
-        error: 'Failed to load KPI data. Please check your Jira configuration.',
+        error: t('kpi_fetch_fail_check_config'),
       }));
       setLoadingStep(0);
     }
