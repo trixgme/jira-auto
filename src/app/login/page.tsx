@@ -2,8 +2,11 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { useLanguage } from '@/contexts/language-context'
+import { LanguageSelector } from '@/components/language-selector'
 
 export default function LoginPage() {
+  const { t } = useLanguage()
   const [credentials, setCredentials] = useState({ id: '', password: '' })
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -25,10 +28,10 @@ export default function LoginPage() {
         router.push('/')
         router.refresh()
       } else {
-        setError('잘못된 아이디 또는 비밀번호입니다')
+        setError(t('invalid_credentials'))
       }
     } catch (error) {
-      setError('로그인 중 오류가 발생했습니다')
+      setError(t('login_error'))
     } finally {
       setIsLoading(false)
     }
@@ -36,7 +39,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="absolute top-4 right-4">
+      <div className="absolute top-4 right-4 flex items-center gap-2">
+        <LanguageSelector />
         <ThemeToggle />
       </div>
       
@@ -46,7 +50,7 @@ export default function LoginPage() {
             Jira Dashboard Login
           </h2>
           <p className="mt-2 text-center text-sm text-muted-foreground">
-            대시보드에 접근하려면 로그인하세요
+            {t('login_to_access')}
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleLogin}>
@@ -56,7 +60,7 @@ export default function LoginPage() {
                 type="text"
                 required
                 className="relative block w-full px-3 py-2 border border-input bg-background rounded-t-md placeholder:text-muted-foreground text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring focus:z-10 sm:text-sm"
-                placeholder="ID"
+                placeholder={t('username')}
                 value={credentials.id}
                 onChange={(e) => setCredentials({...credentials, id: e.target.value})}
                 disabled={isLoading}
@@ -67,7 +71,7 @@ export default function LoginPage() {
                 type="password"
                 required
                 className="relative block w-full px-3 py-2 border border-input bg-background rounded-b-md placeholder:text-muted-foreground text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring focus:z-10 sm:text-sm"
-                placeholder="Password"
+                placeholder={t('password')}
                 value={credentials.password}
                 onChange={(e) => setCredentials({...credentials, password: e.target.value})}
                 disabled={isLoading}
@@ -85,13 +89,13 @@ export default function LoginPage() {
               disabled={isLoading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring disabled:opacity-50 transition-colors"
             >
-              {isLoading ? '로그인 중...' : '로그인'}
+              {isLoading ? t('login_ing') : t('login')}
             </button>
           </div>
         </form>
         
         <div className="text-center text-xs text-muted-foreground">
-          <p>기본 계정: admin/admin 또는 user/user</p>
+          <p>{t('default_account_info')}</p>
         </div>
       </div>
     </div>

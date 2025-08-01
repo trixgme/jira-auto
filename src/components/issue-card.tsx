@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import type { JiraIssue, IssueDifficulty, CommentAnalysis } from '@/lib/types';
 import { DifficultyCache } from '@/lib/difficulty-cache';
+import { useLanguage } from '@/contexts/language-context';
 
 interface IssueCardProps {
   issue: JiraIssue;
@@ -17,6 +18,7 @@ interface IssueCardProps {
 }
 
 export function IssueCard({ issue, onDifficultyAnalyzed }: IssueCardProps) {
+  const { t, language } = useLanguage();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [difficulty, setDifficulty] = useState<IssueDifficulty | undefined>(() => {
     return issue.difficulty || DifficultyCache.get(issue.key) || undefined;
@@ -78,19 +80,19 @@ export function IssueCard({ issue, onDifficultyAnalyzed }: IssueCardProps) {
     
     // 소요시간을 더 사용자 친화적으로 표시
     const getDurationText = (days: number) => {
-      if (days === 0) return '당일';
-      if (days === 1) return '1일';
-      if (days < 7) return `${days}일`;
+      if (days === 0) return t('same_day');
+      if (days === 1) return t('one_day');
+      if (days < 7) return t('n_days', days);
       if (days < 30) {
         const weeks = Math.floor(days / 7);
         const remainingDays = days % 7;
-        if (remainingDays === 0) return `${weeks}주`;
-        return `${weeks}주 ${remainingDays}일`;
+        if (remainingDays === 0) return t('n_weeks', weeks);
+        return t('n_weeks_n_days', weeks, remainingDays);
       }
       const months = Math.floor(days / 30);
       const remainingDays = days % 30;
-      if (remainingDays === 0) return `${months}개월`;
-      return `${months}개월 ${remainingDays}일`;
+      if (remainingDays === 0) return t('n_months', months);
+      return t('n_months_n_days', months, remainingDays);
     };
     
     return {
@@ -129,6 +131,7 @@ export function IssueCard({ issue, onDifficultyAnalyzed }: IssueCardProps) {
           storyPoints: issue.fields.customfield_10016,
           timeEstimate: issue.fields.timetracking?.originalEstimate,
           status: issue.fields.status.name,
+          language: language,
         }),
       });
 
@@ -141,7 +144,7 @@ export function IssueCard({ issue, onDifficultyAnalyzed }: IssueCardProps) {
       } else {
         const error = await response.json();
         console.error('AI analysis failed:', error);
-        alert(`AI 분석 실패: ${error.error || 'Unknown error'}`);
+        alert(t('ai_analysis_failed', error.error || 'Unknown error'));
       }
     } catch (error) {
       console.error('Failed to analyze difficulty:', error);
@@ -164,6 +167,7 @@ export function IssueCard({ issue, onDifficultyAnalyzed }: IssueCardProps) {
           issueKey: issue.key,
           issueTitle: issue.fields.summary,
           issueDescription: issue.fields.description,
+          language: language,
         }),
       });
 
@@ -175,11 +179,11 @@ export function IssueCard({ issue, onDifficultyAnalyzed }: IssueCardProps) {
       } else {
         const error = await response.json();
         console.error('Comment analysis failed:', error);
-        alert(`댓글 분석 실패: ${error.error || 'Unknown error'}`);
+        alert(t('comment_analysis_failed', error.error || 'Unknown error'));
       }
     } catch (error) {
       console.error('Failed to analyze comments:', error);
-      alert('댓글 분석 중 오류가 발생했습니다.');
+      alert(t('comment_analysis_error'));
     } finally {
       setIsAnalyzingComments(false);
     }
@@ -245,7 +249,7 @@ export function IssueCard({ issue, onDifficultyAnalyzed }: IssueCardProps) {
                   onClick={analyzeComments}
                   disabled={isAnalyzingComments}
                   className="h-6 px-1 sm:px-2"
-                  title="댓글 분석"
+                  title={t('comment_analysis')}
                 >
                   {isAnalyzingComments ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
@@ -276,10 +280,10 @@ export function IssueCard({ issue, onDifficultyAnalyzed }: IssueCardProps) {
         
         <div className="flex flex-col text-[10px] sm:text-xs text-muted-foreground gap-1">
           <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
-            <span>생성: {new Date(issue.fields.created).toLocaleDateString('ko-KR')}</span>
+            <span>{t('created')}: {new Date(issue.fields.created).toLocaleDateString('ko-KR')}</span>
             <div className="flex items-center gap-1 sm:gap-2">
               {difficulty && (
-                <span className="text-[10px] sm:text-xs">예상 {difficulty.estimatedHours}시간</span>
+                <span className="text-[10px] sm:text-xs">{t('estimated_hours', difficulty.estimatedHours)}</span>
               )}
               {issue.fields.assignee && (
                 <span className="truncate">{issue.fields.assignee.displayName}</span>
@@ -293,10 +297,10 @@ export function IssueCard({ issue, onDifficultyAnalyzed }: IssueCardProps) {
               return (
                 <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
                   <span className="text-green-600 font-medium">
-                    완료: {completionInfo.completedDate}
+                    {t('completed')}: {completionInfo.completedDate}
                   </span>
                   <span className="text-blue-600 font-medium">
-                    소요시간: {completionInfo.durationText}
+                    {t('duration')}: {completionInfo.durationText}
                   </span>
                 </div>
               );

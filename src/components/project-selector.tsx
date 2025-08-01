@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import type { JiraProject } from '@/lib/types';
+import { useLanguage } from '@/contexts/language-context';
 
 interface ProjectSelectorProps {
   projects: JiraProject[];
@@ -25,6 +26,7 @@ export function ProjectSelector({
   selectedProject,
   onProjectChange,
 }: ProjectSelectorProps) {
+  const { t } = useLanguage();
   const [favorites, setFavorites] = useLocalStorage<string[]>('jira-favorite-projects', []);
 
   const toggleFavorite = (projectKey: string, e: React.MouseEvent) => {
@@ -44,7 +46,7 @@ export function ProjectSelector({
 
   const selectedProjectName =
     selectedProject === 'all'
-      ? '모든 프로젝트'
+      ? t('all_projects')
       : projects.find((p) => p.key === selectedProject)?.name || selectedProject;
 
   return (
@@ -66,7 +68,7 @@ export function ProjectSelector({
               selectedProject === 'all' ? 'opacity-100' : 'opacity-0'
             )}
           />
-          모든 프로젝트
+          {t('all_projects')}
         </DropdownMenuItem>
         {sortedProjects.length > 0 && <DropdownMenuSeparator />}
         {sortedProjects.map((project) => (

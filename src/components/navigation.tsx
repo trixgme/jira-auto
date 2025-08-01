@@ -4,19 +4,21 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { BarChart3, Home } from 'lucide-react';
+import { useLanguage } from '@/contexts/language-context';
 
 export function Navigation() {
   const pathname = usePathname();
+  const { t } = useLanguage();
 
   const navItems = [
     {
-      name: '대시보드',
+      name: t('dashboard'),
       href: '/',
       icon: Home,
       active: pathname === '/',
     },
     {
-      name: 'KPI',
+      name: t('kpi'),
       href: '/kpi',
       icon: BarChart3,
       active: pathname === '/kpi',

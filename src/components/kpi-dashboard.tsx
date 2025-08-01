@@ -17,6 +17,8 @@ import { DifficultyDialog } from '@/components/difficulty-dialog';
 import { CommentAnalysisDialog } from '@/components/comment-analysis-dialog';
 import { Button } from '@/components/ui/button';
 import { DifficultyCache } from '@/lib/difficulty-cache';
+import { useLanguage } from '@/contexts/language-context';
+import { LanguageSelector } from '@/components/language-selector';
 
 interface UserKpi {
   user: string;
@@ -40,6 +42,7 @@ interface UserIssues {
 }
 
 export function KpiDashboard() {
+  const { t, language } = useLanguage();
   const [data, setData] = useState<KpiData>({
     userKpis: [],
     totalIssues: 0,
@@ -404,6 +407,7 @@ export function KpiDashboard() {
           storyPoints: issue.fields.customfield_10016,
           timeEstimate: issue.fields.timetracking?.originalEstimate,
           status: issue.fields.status.name,
+          language: language,
         }),
       });
 
@@ -419,7 +423,7 @@ export function KpiDashboard() {
       } else {
         const error = await response.json();
         console.error('AI analysis failed:', error);
-        alert(`AI 분석 실패: ${error.error || 'Unknown error'}`);
+        alert(`${t('ai_analysis_failed', error.error || 'Unknown error')}`);
       }
     } catch (error) {
       console.error('Failed to analyze difficulty:', error);
@@ -446,6 +450,7 @@ export function KpiDashboard() {
           issueKey: issue.key,
           issueTitle: issue.fields.summary,
           issueDescription: issue.fields.description,
+          language: language,
         }),
       });
 
@@ -460,11 +465,11 @@ export function KpiDashboard() {
       } else {
         const error = await response.json();
         console.error('Comment analysis failed:', error);
-        alert(`댓글 분석 실패: ${error.error || 'Unknown error'}`);
+        alert(`${t('comment_analysis_failed', error.error || 'Unknown error')}`);
       }
     } catch (error) {
       console.error('Failed to analyze comments:', error);
-      alert('댓글 분석 중 오류가 발생했습니다.');
+      alert(t('comment_analysis_error'));
     } finally {
       setAnalyzingComments(prev => {
         const newSet = new Set(prev);
@@ -479,12 +484,12 @@ export function KpiDashboard() {
       <div className="container mx-auto p-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-red-500">Error</CardTitle>
+            <CardTitle className="text-red-500">{t('error')}</CardTitle>
           </CardHeader>
           <CardContent>
             <p>{data.error}</p>
             <p className="mt-2 text-sm text-muted-foreground">
-              .env.local 파일에 Jira 설정이 올바르게 되어있는지 확인해주세요.
+              {t('check_env_config')}
             </p>
           </CardContent>
         </Card>
@@ -493,11 +498,11 @@ export function KpiDashboard() {
   }
 
   const loadingSteps = [
-    '초기화 중...',
-    '프로젝트 정보 조회 중...',
-    '이슈 데이터 조회 중...',
-    'KPI 데이터 계산 중...',
-    '완료'
+    t('loading_step_initializing'),
+    t('loading_step_projects'),
+    t('loading_step_issues'),
+    t('loading_step_kpi_calculation'),
+    t('loading_step_completed')
   ];
 
   return (
@@ -505,12 +510,13 @@ export function KpiDashboard() {
       <div className="mb-4 sm:mb-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
-            <h1 className="text-2xl sm:text-3xl font-bold">KPI Dashboard</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">{t('kpi')}</h1>
             <div className="sm:block">
               <Navigation />
             </div>
           </div>
           <div className="flex items-center gap-2 self-start sm:self-auto">
+            <LanguageSelector />
             <LogoutButton />
             <ThemeToggle />
           </div>
@@ -518,13 +524,13 @@ export function KpiDashboard() {
         
         <div className="flex flex-col gap-4">
           <p className="text-muted-foreground">
-            개발팀의 업무 진행 상황을 정량적으로 추적합니다.
+            {t('kpi_description')}
           </p>
           
           {/* 날짜 선택 */}
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
             <div className="flex flex-wrap gap-2">
-              <span className="text-sm text-muted-foreground flex items-center mr-2">빠른 선택:</span>
+              <span className="text-sm text-muted-foreground flex items-center mr-2">{t('quick_select')}</span>
               {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
                 <Badge
                   key={month}
@@ -535,12 +541,12 @@ export function KpiDashboard() {
                     setDateRange({ startDate: null, endDate: null });
                   }}
                 >
-                  {month}월
+                  {month}{t('month')}
                 </Badge>
               ))}
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">또는</span>
+              <span className="text-sm text-muted-foreground">{t('or')}</span>
               <DateRangePicker
                 value={dateRange}
                 onChange={(range) => {
@@ -558,7 +564,7 @@ export function KpiDashboard() {
           {favoriteUsers.size > 0 && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-              <span>즐겨찾기한 사용자 {favoriteUsers.size}명이 상단에 표시됩니다.</span>
+              <span>{t('favorite_users_display', favoriteUsers.size)}</span>
             </div>
           )}
         </div>
@@ -579,7 +585,7 @@ export function KpiDashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">전체 이슈</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('total_issues')}</CardTitle>
             <Bug className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -588,8 +594,8 @@ export function KpiDashboard() {
             </div>
             <p className="text-xs text-muted-foreground">
               {dateRange.startDate && dateRange.endDate 
-                ? `${dateRange.startDate.toLocaleDateString('ko-KR')} ~ ${dateRange.endDate.toLocaleDateString('ko-KR')} 생성`
-                : `${selectedMonth}월 생성`
+                ? t('created_date_range', dateRange.startDate.toLocaleDateString('ko-KR'), dateRange.endDate.toLocaleDateString('ko-KR'))
+                : t('created_in_month', selectedMonth)
               }
             </p>
           </CardContent>
@@ -597,7 +603,7 @@ export function KpiDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">해결된 이슈</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('resolved_issues')}</CardTitle>
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
@@ -606,7 +612,7 @@ export function KpiDashboard() {
             </div>
             <p className="text-xs text-muted-foreground">
               {data.totalIssues > 0 && !data.loading ? 
-                `${Math.round((data.totalResolved / data.totalIssues) * 100)}% 완료` : 
+                t('percent_completed', Math.round((data.totalResolved / data.totalIssues) * 100)) : 
                 ''
               }
             </p>
@@ -615,7 +621,7 @@ export function KpiDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">미해결 이슈</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('unresolved_issues')}</CardTitle>
             <Clock className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
@@ -627,7 +633,7 @@ export function KpiDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">활성 사용자</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('active_users')}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -643,16 +649,16 @@ export function KpiDashboard() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
-            사용자별 KPI ({dateRange.startDate && dateRange.endDate 
+            {t('user_kpi')} ({dateRange.startDate && dateRange.endDate 
               ? `${dateRange.startDate.toLocaleDateString('ko-KR')} ~ ${dateRange.endDate.toLocaleDateString('ko-KR')}`
-              : `${selectedMonth}월`
+              : t('created_in_month', selectedMonth)
             })
           </CardTitle>
           <CardDescription>
             {dateRange.startDate && dateRange.endDate 
-              ? `${dateRange.startDate.toLocaleDateString('ko-KR')} ~ ${dateRange.endDate.toLocaleDateString('ko-KR')} 기간에 생성된 이슈 기준으로`
-              : `${selectedMonth}월에 생성된 이슈 기준으로`
-            } 각 사용자의 할당, 해결, 미해결 현황 및 평균 해결 시간
+              ? t('kpi_date_range_description', dateRange.startDate.toLocaleDateString('ko-KR'), dateRange.endDate.toLocaleDateString('ko-KR'))
+              : t('kpi_month_description', selectedMonth)
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -664,7 +670,7 @@ export function KpiDashboard() {
             </div>
           ) : data.userKpis.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
-              KPI 데이터가 없습니다.
+              {t('no_kpi_data')}
             </p>
           ) : (
             <>
@@ -678,7 +684,7 @@ export function KpiDashboard() {
                       onClick={() => handleSort('user')}
                     >
                       <div className="flex items-center gap-2">
-                        사용자
+                        {t('user')}
                         {getSortIcon('user')}
                       </div>
                     </th>
@@ -687,7 +693,7 @@ export function KpiDashboard() {
                       onClick={() => handleSort('assigned')}
                     >
                       <div className="flex items-center justify-center gap-2">
-                        할당된 이슈
+                        {t('assigned_issues')}
                         {getSortIcon('assigned')}
                       </div>
                     </th>
@@ -696,7 +702,7 @@ export function KpiDashboard() {
                       onClick={() => handleSort('resolved')}
                     >
                       <div className="flex items-center justify-center gap-2">
-                        해결된 이슈
+                        {t('resolved_issues')}
                         {getSortIcon('resolved')}
                       </div>
                     </th>
@@ -705,7 +711,7 @@ export function KpiDashboard() {
                       onClick={() => handleSort('unresolved')}
                     >
                       <div className="flex items-center justify-center gap-2">
-                        미해결 이슈
+                        {t('unresolved_issues')}
                         {getSortIcon('unresolved')}
                       </div>
                     </th>
@@ -714,17 +720,17 @@ export function KpiDashboard() {
                       onClick={() => handleSort('resolutionRate')}
                     >
                       <div className="flex items-center justify-center gap-2">
-                        해결률
+                        {t('resolution_rate')}
                         {getSortIcon('resolutionRate')}
                       </div>
                     </th>
-                    <th className="text-center py-3 px-4 font-medium w-24">해결률 차트</th>
+                    <th className="text-center py-3 px-4 font-medium w-24">{t('resolution_rate_chart')}</th>
                     <th 
                       className="text-center py-3 px-4 font-medium cursor-pointer hover:bg-muted select-none w-24"
                       onClick={() => handleSort('avgResolutionTime')}
                     >
                       <div className="flex items-center justify-center gap-2">
-                        평균 해결시간
+                        {t('avg_resolution_time')}
                         {getSortIcon('avgResolutionTime')}
                       </div>
                     </th>
@@ -745,7 +751,7 @@ export function KpiDashboard() {
                                 toggleFavoriteUser(userKpi.user);
                               }}
                               className="hover:scale-110 transition-transform flex-shrink-0"
-                              title={favoriteUsers.has(userKpi.user) ? '즐겨찾기 해제' : '즐겨찾기 추가'}
+                              title={favoriteUsers.has(userKpi.user) ? t('favorite_remove') : t('favorite_add')}
                             >
                               <Star 
                                 className={`w-4 h-4 ${
@@ -773,9 +779,9 @@ export function KpiDashboard() {
                               </DialogTrigger>
                             <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
                               <DialogHeader>
-                                <DialogTitle>{userKpi.user}님의 할당된 이슈</DialogTitle>
+                                <DialogTitle>{t('user_assigned_issues', userKpi.user)}</DialogTitle>
                                 <DialogDescription>
-                                  {selectedMonth}월에 할당된 총 {userKpi.assigned}개의 이슈 목록
+                                  {t('month_assigned_issues_list', userKpi.assigned, selectedMonth)}
                                 </DialogDescription>
                               </DialogHeader>
                               
@@ -786,21 +792,21 @@ export function KpiDashboard() {
                                   className="cursor-pointer"
                                   onClick={() => setSelectedUserFilter('all')}
                                 >
-                                  전체 ({userIssues[userKpi.user]?.length || 0})
+                                  {t('all')} ({userIssues[userKpi.user]?.length || 0})
                                 </Badge>
                                 <Badge
                                   variant={selectedUserFilter === 'todo' ? 'default' : 'outline'}
                                   className="cursor-pointer"
                                   onClick={() => setSelectedUserFilter('todo')}
                                 >
-                                  해야할일 ({getFilteredIssuesCount(userIssues[userKpi.user] || [], 'todo')})
+                                  {t('todo')} ({getFilteredIssuesCount(userIssues[userKpi.user] || [], 'todo')})
                                 </Badge>
                                 <Badge
                                   variant={selectedUserFilter === 'completed' ? 'default' : 'outline'}
                                   className="cursor-pointer"
                                   onClick={() => setSelectedUserFilter('completed')}
                                 >
-                                  완료 ({getFilteredIssuesCount(userIssues[userKpi.user] || [], 'completed')})
+                                  {t('completed')} ({getFilteredIssuesCount(userIssues[userKpi.user] || [], 'completed')})
                                 </Badge>
                               </div>
 
@@ -811,9 +817,9 @@ export function KpiDashboard() {
                                   if (filteredIssues.length === 0) {
                                     return (
                                       <div className="text-center text-muted-foreground py-8">
-                                        {selectedUserFilter === 'all' && '할당된 이슈가 없습니다.'}
-                                        {selectedUserFilter === 'todo' && '해야할 이슈가 없습니다.'}
-                                        {selectedUserFilter === 'completed' && '완료된 이슈가 없습니다.'}
+                                        {selectedUserFilter === 'all' && t('no_assigned_issues')}
+                                        {selectedUserFilter === 'todo' && t('no_todo_issues')}
+                                        {selectedUserFilter === 'completed' && t('no_completed_issues_in_list')}
                                       </div>
                                     );
                                   }
@@ -875,19 +881,19 @@ export function KpiDashboard() {
                                             {issue.fields.summary}
                                           </h4>
                                           <div className="text-xs text-muted-foreground">
-                                            프로젝트: {issue.fields.project.name}
+                                            {t('project')}: {issue.fields.project.name}
                                           </div>
                                           <div className="text-xs text-muted-foreground">
-                                            생성일: {new Date(issue.fields.created).toLocaleDateString('ko-KR')}
+                                            {t('created')}: {new Date(issue.fields.created).toLocaleDateString('ko-KR')}
                                           </div>
                                           {issue.fields.resolutiondate && (
                                             <div className="text-xs text-muted-foreground">
-                                              완료일: {new Date(issue.fields.resolutiondate).toLocaleDateString('ko-KR')}
+                                              {t('completed')}: {new Date(issue.fields.resolutiondate).toLocaleDateString('ko-KR')}
                                             </div>
                                           )}
                                           {difficulty && (
                                             <div className="text-xs text-muted-foreground">
-                                              예상 {difficulty.estimatedHours}시간
+                                              {t('estimated_hours', difficulty.estimatedHours)}
                                             </div>
                                           )}
                                         </a>
@@ -950,7 +956,7 @@ export function KpiDashboard() {
                                                 }}
                                                 disabled={analyzingComments.has(issue.key)}
                                                 className="h-6 px-2"
-                                                title="댓글 분석"
+                                                title={t('comment_analysis')}
                                               >
                                                 {analyzingComments.has(issue.key) ? (
                                                   <Loader2 className="h-3 w-3 animate-spin" />
@@ -1007,7 +1013,7 @@ export function KpiDashboard() {
                           </div>
                         </td>
                         <td className="py-3 px-4 text-center text-sm text-muted-foreground">
-                          {userKpi.avgResolutionTime > 0 ? `${userKpi.avgResolutionTime}일` : '-'}
+                          {userKpi.avgResolutionTime > 0 ? `${userKpi.avgResolutionTime}${t('days')}` : '-'}
                         </td>
                       </tr>
                     );
@@ -1046,35 +1052,35 @@ export function KpiDashboard() {
                           variant={resolutionRate >= 70 ? "default" : "secondary"}
                           className={resolutionRate >= 70 ? "bg-blue-500 hover:bg-blue-600" : ""}
                         >
-                          해결률 {resolutionRate}%
+                          {t('resolution_rate')} {resolutionRate}%
                         </Badge>
                       </div>
                       
                       <div className="grid grid-cols-2 gap-4 mb-4">
                         <div className="text-center">
                           <div className="text-2xl font-bold">{userKpi.assigned}</div>
-                          <div className="text-xs text-muted-foreground">할당된 이슈</div>
+                          <div className="text-xs text-muted-foreground">{t('assigned_issues')}</div>
                         </div>
                         <div className="text-center">
                           <div className="text-2xl font-bold text-green-600">{userKpi.resolved}</div>
-                          <div className="text-xs text-muted-foreground">해결된 이슈</div>
+                          <div className="text-xs text-muted-foreground">{t('resolved_issues')}</div>
                         </div>
                         <div className="text-center">
                           <div className="text-2xl font-bold text-orange-600">{userKpi.unresolved}</div>
-                          <div className="text-xs text-muted-foreground">미해결 이슈</div>
+                          <div className="text-xs text-muted-foreground">{t('unresolved_issues')}</div>
                         </div>
                         <div className="text-center">
                           <div className="text-2xl font-bold">
-                            {userKpi.avgResolutionTime > 0 ? `${userKpi.avgResolutionTime}일` : '-'}
+                            {userKpi.avgResolutionTime > 0 ? `${userKpi.avgResolutionTime}${t('days')}` : '-'}
                           </div>
-                          <div className="text-xs text-muted-foreground">평균 해결시간</div>
+                          <div className="text-xs text-muted-foreground">{t('avg_resolution_time')}</div>
                         </div>
                       </div>
                       
                       {/* 해결률 차트 */}
                       <div className="mb-4">
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm text-muted-foreground">해결률 진행도</span>
+                          <span className="text-sm text-muted-foreground">{t('resolution_rate_progress')}</span>
                           <span className="text-sm font-medium">{resolutionRate}%</span>
                         </div>
                         <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
@@ -1094,33 +1100,33 @@ export function KpiDashboard() {
                         <Dialog>
                           <DialogTrigger asChild>
                             <Button variant="outline" className="w-full">
-                              이슈 목록 보기 ({userIssues[userKpi.user].length}개)
+                              {t('view_issue_list', userIssues[userKpi.user].length)}
                             </Button>
                           </DialogTrigger>
                           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
                             <DialogHeader>
-                              <DialogTitle>{userKpi.user}의 이슈 목록</DialogTitle>
+                              <DialogTitle>{t('user_issue_list', userKpi.user)}</DialogTitle>
                               <div className="flex gap-2 mt-2">
                                 <Button
                                   variant={selectedUserFilter === 'all' ? 'default' : 'outline'}
                                   size="sm"
                                   onClick={() => setSelectedUserFilter('all')}
                                 >
-                                  전체 ({getFilteredIssuesCount(userIssues[userKpi.user], 'all')})
+                                  {t('all')} ({getFilteredIssuesCount(userIssues[userKpi.user], 'all')})
                                 </Button>
                                 <Button
                                   variant={selectedUserFilter === 'todo' ? 'default' : 'outline'}
                                   size="sm"
                                   onClick={() => setSelectedUserFilter('todo')}
                                 >
-                                  해야할 일 ({getFilteredIssuesCount(userIssues[userKpi.user], 'todo')})
+                                  {t('todo')} ({getFilteredIssuesCount(userIssues[userKpi.user], 'todo')})
                                 </Button>
                                 <Button
                                   variant={selectedUserFilter === 'completed' ? 'default' : 'outline'}
                                   size="sm"
                                   onClick={() => setSelectedUserFilter('completed')}
                                 >
-                                  완료 ({getFilteredIssuesCount(userIssues[userKpi.user], 'completed')})
+                                  {t('completed')} ({getFilteredIssuesCount(userIssues[userKpi.user], 'completed')})
                                 </Button>
                               </div>
                             </DialogHeader>
@@ -1131,9 +1137,9 @@ export function KpiDashboard() {
                                 if (filteredIssues.length === 0) {
                                   return (
                                     <div className="text-center text-muted-foreground py-8">
-                                      {selectedUserFilter === 'all' && '할당된 이슈가 없습니다.'}
-                                      {selectedUserFilter === 'todo' && '해야할 이슈가 없습니다.'}
-                                      {selectedUserFilter === 'completed' && '완료된 이슈가 없습니다.'}
+                                      {selectedUserFilter === 'all' && t('no_assigned_issues')}
+                                      {selectedUserFilter === 'todo' && t('no_todo_issues')}
+                                      {selectedUserFilter === 'completed' && t('no_completed_issues_in_list')}
                                     </div>
                                   );
                                 }
@@ -1195,19 +1201,19 @@ export function KpiDashboard() {
                                             {issue.fields.summary}
                                           </h4>
                                           <div className="text-xs text-muted-foreground">
-                                            프로젝트: {issue.fields.project.name}
+                                            {t('project')}: {issue.fields.project.name}
                                           </div>
                                           <div className="text-xs text-muted-foreground">
-                                            생성일: {new Date(issue.fields.created).toLocaleDateString('ko-KR')}
+                                            {t('created')}: {new Date(issue.fields.created).toLocaleDateString('ko-KR')}
                                           </div>
                                           {issue.fields.resolutiondate && (
                                             <div className="text-xs text-muted-foreground">
-                                              완료일: {new Date(issue.fields.resolutiondate).toLocaleDateString('ko-KR')}
+                                              {t('completed')}: {new Date(issue.fields.resolutiondate).toLocaleDateString('ko-KR')}
                                             </div>
                                           )}
                                           {difficulty && (
                                             <div className="text-xs text-muted-foreground">
-                                              예상 {difficulty.estimatedHours}시간
+                                              {t('estimated_hours', difficulty.estimatedHours)}
                                             </div>
                                           )}
                                         </a>
@@ -1270,7 +1276,7 @@ export function KpiDashboard() {
                                                 }}
                                                 disabled={analyzingComments.has(issue.key)}
                                                 className="h-6 px-2"
-                                                title="댓글 분석"
+                                                title={t('comment_analysis')}
                                               >
                                                 {analyzingComments.has(issue.key) ? (
                                                   <Loader2 className="h-3 w-3 animate-spin" />

@@ -3,10 +3,12 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { LogOut } from 'lucide-react'
+import { useLanguage } from '@/contexts/language-context'
 
 export function LogoutButton() {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const { t } = useLanguage()
 
   const handleLogout = async () => {
     setIsLoading(true)
@@ -31,7 +33,9 @@ export function LogoutButton() {
       className="flex items-center gap-2"
     >
       <LogOut className="w-4 h-4" />
-      {isLoading ? '로그아웃 중...' : '로그아웃'}
+      <span className="hidden sm:inline">
+        {isLoading ? `${t('logout')}...` : t('logout')}
+      </span>
     </Button>
   )
 }

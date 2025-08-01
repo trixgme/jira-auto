@@ -10,6 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { MessageSquare, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
 import type { CommentAnalysis } from "@/lib/types";
+import { useLanguage } from '@/contexts/language-context';
 
 interface CommentAnalysisDialogProps {
   open: boolean;
@@ -26,6 +27,7 @@ export function CommentAnalysisDialog({
   issueTitle,
   analysis,
 }: CommentAnalysisDialogProps) {
+  const { t } = useLanguage();
   if (!analysis) return null;
 
   const getScoreColor = (score: number) => {
@@ -42,10 +44,10 @@ export function CommentAnalysisDialog({
   };
 
   const getScoreText = (score: number) => {
-    if (score >= 8) return "매우 좋음";
-    if (score >= 6) return "좋음";
-    if (score >= 4) return "보통";
-    return "개선 필요";
+    if (score >= 8) return t('comment_score_very_good');
+    if (score >= 6) return t('comment_score_good');
+    if (score >= 4) return t('comment_score_normal');
+    return t('comment_score_needs_improvement');
   };
 
   return (
@@ -54,7 +56,7 @@ export function CommentAnalysisDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5" />
-            댓글 분석 결과
+            {t('comment_analysis_result')}
           </DialogTitle>
           <DialogDescription className="break-words">
             <span className="font-mono text-xs">{issueKey}</span>
@@ -75,7 +77,7 @@ export function CommentAnalysisDialog({
               </div>
               <p className="text-sm font-medium">{getScoreText(analysis.score)}</p>
               <p className="text-xs text-muted-foreground mt-1">
-                {analysis.scoreDescriptionKo}
+                {analysis.scoreDescription}
               </p>
             </div>
           </div>
@@ -85,32 +87,20 @@ export function CommentAnalysisDialog({
             <div className="flex items-start gap-2 p-3 rounded-md bg-yellow-50 dark:bg-yellow-900/20">
               <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
               <span className="text-sm text-yellow-700 dark:text-yellow-400 break-words">
-                ⚠️ 언어적 장벽, 기술적 전문 용어, 또는 충분하지 않은 맥락으로 인해 정확한 분석이 어려울 수 있습니다.
+                {t('analysis_difficulty_warning')}
               </span>
             </div>
           )}
 
           <div className="space-y-4">
-            {/* 한국어 분석 */}
+            {/* 분석 결과 */}
             <div>
               <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                🇰🇷 분석 결과 (한국어)
+                {t('analysis_result_ko')}
               </h4>
               <div className="text-sm text-muted-foreground bg-muted p-4 rounded-md max-w-full overflow-hidden">
                 <p className="break-words whitespace-pre-wrap leading-relaxed">
-                  {analysis.analysisKo}
-                </p>
-              </div>
-            </div>
-
-            {/* 영어 분석 */}
-            <div>
-              <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                🇺🇸 Analysis (English)
-              </h4>
-              <div className="text-sm text-muted-foreground bg-muted p-4 rounded-md max-w-full overflow-hidden">
-                <p className="break-words whitespace-pre-wrap leading-relaxed">
-                  {analysis.analysisEn}
+                  {analysis.analysis}
                 </p>
               </div>
             </div>
@@ -120,7 +110,7 @@ export function CommentAnalysisDialog({
               <div>
                 <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
                   <XCircle className="h-4 w-4 text-red-500" />
-                  주요 이슈
+                  {t('key_issues')}
                 </h4>
                 <ul className="text-sm text-muted-foreground space-y-2">
                   {analysis.keyIssues.map((issue, index) => (
@@ -138,7 +128,7 @@ export function CommentAnalysisDialog({
               <div>
                 <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  개선 권장사항
+                  {t('improvement_recommendations')}
                 </h4>
                 <ul className="text-sm text-muted-foreground space-y-2">
                   {analysis.recommendations.map((rec, index) => (
@@ -154,7 +144,7 @@ export function CommentAnalysisDialog({
             {/* 분석 일시 */}
             {analysis.analyzedAt && (
               <div className="text-xs text-muted-foreground text-right pt-2 border-t">
-                분석 일시: {new Date(analysis.analyzedAt).toLocaleString("ko-KR")}
+                {t('analysis_time', new Date(analysis.analyzedAt).toLocaleString("ko-KR"))}
               </div>
             )}
           </div>

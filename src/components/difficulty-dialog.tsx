@@ -11,6 +11,7 @@ import { DifficultyBadge } from "@/components/difficulty-badge";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Brain, AlertCircle, CheckCircle, XCircle } from "lucide-react";
 import type { IssueDifficulty } from "@/lib/types";
+import { useLanguage } from '@/contexts/language-context';
 
 interface DifficultyDialogProps {
   open: boolean;
@@ -27,20 +28,21 @@ export function DifficultyDialog({
   issueTitle,
   difficulty,
 }: DifficultyDialogProps) {
+  const { t } = useLanguage();
   if (!difficulty) return null;
 
   const getDifficultyDescription = (level: number) => {
     switch (level) {
       case 1:
-        return "매우 간단한 작업으로, 경험이 적은 개발자도 쉽게 처리할 수 있습니다.";
+        return t('difficulty_very_easy');
       case 2:
-        return "비교적 간단한 작업으로, 기본적인 이해만 있으면 처리 가능합니다.";
+        return t('difficulty_easy');
       case 3:
-        return "중간 정도의 복잡도로, 어느 정도의 경험과 설계가 필요합니다.";
+        return t('difficulty_medium');
       case 4:
-        return "복잡한 작업으로, 숙련된 개발자와 신중한 계획이 필요합니다.";
+        return t('difficulty_hard');
       case 5:
-        return "매우 복잡한 작업으로, 아키텍처 변경이나 광범위한 영향을 미칠 수 있습니다.";
+        return t('difficulty_very_hard');
       default:
         return "";
     }
@@ -51,25 +53,25 @@ export function DifficultyDialog({
       case 1:
       case 2:
         return [
-          "주니어 개발자에게 할당 가능",
-          "코드 리뷰는 기본적인 수준으로 충분",
-          "테스트 케이스 작성 권장",
+          t('rec_junior_assignable'),
+          t('rec_basic_review'),
+          t('rec_test_recommended'),
         ];
       case 3:
         return [
-          "중급 이상 개발자 권장",
-          "설계 문서 작성 필요",
-          "철저한 코드 리뷰 필요",
-          "단위 테스트 및 통합 테스트 필수",
+          t('rec_intermediate_dev'),
+          t('rec_design_doc_needed'),
+          t('rec_thorough_review'),
+          t('rec_tests_required'),
         ];
       case 4:
       case 5:
         return [
-          "시니어 개발자 필수",
-          "상세한 기술 설계 문서 필요",
-          "여러 번의 코드 리뷰 세션 권장",
-          "포괄적인 테스트 전략 수립",
-          "관련 팀과의 협의 필요",
+          t('rec_senior_required'),
+          t('rec_detailed_design'),
+          t('rec_multiple_reviews'),
+          t('rec_comprehensive_testing'),
+          t('rec_team_discussion'),
         ];
       default:
         return [];
@@ -82,7 +84,7 @@ export function DifficultyDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Brain className="h-5 w-5" />
-            AI 난이도 분석 결과
+            {t('ai_difficulty_analysis')}
           </DialogTitle>
           <DialogDescription className="break-words">
             <span className="font-mono text-xs">{issueKey}</span>
@@ -98,7 +100,7 @@ export function DifficultyDialog({
 
           <div className="space-y-4">
             <div>
-              <h4 className="text-sm font-semibold mb-2">난이도 설명</h4>
+              <h4 className="text-sm font-semibold mb-2">{t('difficulty_description')}</h4>
               <p className="text-sm text-muted-foreground break-words">
                 {getDifficultyDescription(difficulty.difficulty)}
               </p>
@@ -107,37 +109,25 @@ export function DifficultyDialog({
             <div>
               <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                AI 분석 근거 (English)
+                {t('ai_analysis_reasoning_en')}
               </h4>
               <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md max-w-full overflow-hidden">
                 <p className="break-words whitespace-pre-wrap">{difficulty.reasoning}</p>
               </div>
             </div>
 
-            {difficulty.reasoningKo && (
-              <div>
-                <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                  AI 분석 근거 (한국어)
-                </h4>
-                <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md max-w-full overflow-hidden">
-                  <p className="break-words whitespace-pre-wrap">{difficulty.reasoningKo}</p>
-                </div>
-              </div>
-            )}
-
             <div>
               <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
                 <Clock className="h-4 w-4" />
-                예상 소요 시간
+                {t('estimated_time')}
               </h4>
               <Badge variant="secondary" className="text-sm">
-                약 {difficulty.estimatedHours}시간
+                {t('about_n_hours', difficulty.estimatedHours)}
               </Badge>
             </div>
 
             <div>
-              <h4 className="text-sm font-semibold mb-2">권장 사항</h4>
+              <h4 className="text-sm font-semibold mb-2">{t('recommendations')}</h4>
               <ul className="text-sm text-muted-foreground space-y-2">
                 {getRecommendations(difficulty.difficulty).map((rec, index) => (
                   <li key={index} className="flex items-start gap-2">
@@ -156,14 +146,14 @@ export function DifficultyDialog({
                   <>
                     <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
                     <span className="text-sm text-green-700 dark:text-green-400 break-words">
-                      Jira 이슈에 분석 결과가 댓글로 추가되었습니다
+                      {t('comment_added_to_jira')}
                     </span>
                   </>
                 ) : (
                   <>
                     <XCircle className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
                     <span className="text-sm text-yellow-700 dark:text-yellow-400 break-words">
-                      Jira 댓글 추가 실패 (수동으로 복사해서 사용하세요)
+                      {t('comment_add_failed')}
                     </span>
                   </>
                 )}
@@ -172,7 +162,7 @@ export function DifficultyDialog({
 
             {difficulty.analyzedAt && (
               <div className="text-xs text-muted-foreground text-right">
-                분석 일시: {new Date(difficulty.analyzedAt).toLocaleString("ko-KR")}
+                {t('analysis_time', new Date(difficulty.analyzedAt).toLocaleString("ko-KR"))}
               </div>
             )}
           </div>

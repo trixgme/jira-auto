@@ -3,6 +3,7 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { JiraIssue } from '@/lib/types';
+import { useLanguage } from '@/contexts/language-context';
 
 interface IssuesChartProps {
   newIssues: JiraIssue[];
@@ -15,6 +16,7 @@ interface IssuesChartProps {
 }
 
 export function IssuesChart({ newIssues, completedIssues, daysBack, dateRange }: IssuesChartProps) {
+  const { t } = useLanguage();
   const getDateRange = (days: number) => {
     const dates = [];
     const today = new Date();
@@ -95,8 +97,8 @@ export function IssuesChart({ newIssues, completedIssues, daysBack, dateRange }:
     return {
       date: formatDate(date, totalDays),
       fullDate: date.toLocaleDateString('ko-KR'),
-      새로운_이슈: newIssueCounts[dateKey] || 0,
-      완료된_이슈: completedIssueCounts[dateKey] || 0,
+      new_issues: newIssueCounts[dateKey] || 0,
+      completed_issues: completedIssueCounts[dateKey] || 0,
     };
   });
 
@@ -108,19 +110,19 @@ export function IssuesChart({ newIssues, completedIssues, daysBack, dateRange }:
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          이슈 현황 차트
+          {t('issue_status_chart')}
           <div className="flex gap-4 text-sm">
-            <span className="text-blue-600">신규: {totalNew}</span>
-            <span className="text-green-600">완료: {totalCompleted}</span>
+            <span className="text-blue-600">{t('new_short')}: {totalNew}</span>
+            <span className="text-green-600">{t('completed_short')}: {totalCompleted}</span>
             <span className={`${netChange > 0 ? 'text-red-600' : netChange < 0 ? 'text-green-600' : 'text-gray-600'}`}>
-              순증감: {netChange > 0 ? '+' : ''}{netChange}
+              {t('net_change')}: {netChange > 0 ? '+' : ''}{netChange}
             </span>
           </div>
         </CardTitle>
         <CardDescription>
           {dateRange && dateRange.startDate && dateRange.endDate
-            ? `${dateRange.startDate.toLocaleDateString('ko-KR')} ~ ${dateRange.endDate.toLocaleDateString('ko-KR')} 이슈 생성 및 완료 현황`
-            : `최근 ${daysBack === 1 ? '오늘' : `${daysBack}일간`} 이슈 생성 및 완료 현황`
+            ? `${dateRange.startDate.toLocaleDateString('ko-KR')} ~ ${dateRange.endDate.toLocaleDateString('ko-KR')} ${t('issue_creation_completion_status')}`
+            : `${t('issues_created_recent', daysBack === 1 ? t('today') : t('n_days', daysBack)).split(' ')[0]} ${t('n_days', daysBack).split(' ')[1]} ${t('issue_creation_completion_status')}`
           }
         </CardDescription>
       </CardHeader>
@@ -146,24 +148,24 @@ export function IssuesChart({ newIssues, completedIssues, daysBack, dateRange }:
               }}
               formatter={(value, name) => [
                 value, 
-                name === '새로운_이슈' ? '새로운 이슈' : '완료된 이슈'
+                name === 'new_issues' ? t('new_issues') : t('completed_issues')
               ]}
             />
             <Legend 
               formatter={(value) => 
-                value === '새로운_이슈' ? '새로운 이슈' : '완료된 이슈'
+                value === 'new_issues' ? t('new_issues') : t('completed_issues')
               }
             />
             <Bar 
-              dataKey="새로운_이슈" 
+              dataKey="new_issues" 
               fill="#3b82f6" 
-              name="새로운_이슈"
+              name="new_issues"
               radius={[2, 2, 0, 0]}
             />
             <Bar 
-              dataKey="완료된_이슈" 
+              dataKey="completed_issues" 
               fill="#10b981" 
-              name="완료된_이슈"
+              name="completed_issues"
               radius={[2, 2, 0, 0]}
             />
           </BarChart>

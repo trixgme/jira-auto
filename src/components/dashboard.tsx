@@ -12,12 +12,14 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { IssuesChart } from '@/components/issues-chart';
 import { Navigation } from '@/components/navigation';
 import { LogoutButton } from '@/components/logout-button';
+import { LanguageSelector } from '@/components/language-selector';
 import { Search, X, FileText } from 'lucide-react';
 import { LoadingProgress } from '@/components/loading-progress';
 import { ReportDialog } from '@/components/report-dialog';
 import { DateRangePicker } from '@/components/date-range-picker';
 import type { JiraIssue, JiraProject, IssueDifficulty } from '@/lib/types';
 import { DifficultyCache } from '@/lib/difficulty-cache';
+import { useLanguage } from '@/contexts/language-context';
 
 interface DashboardData {
   newIssues: JiraIssue[];
@@ -28,6 +30,8 @@ interface DashboardData {
 }
 
 export function Dashboard() {
+  const { t, language } = useLanguage();
+  
   const [data, setData] = useState<DashboardData>({
     newIssues: [],
     completedIssues: [],
@@ -285,18 +289,18 @@ export function Dashboard() {
   }, [issuesDifficulty]);
 
   const loadingSteps = [
-    '프로젝트 정보 조회 중...',
-    '새로운 이슈 조회 중...',
-    '완료된 이슈 조회 중...',
-    '데이터 처리 중...'
+    t('loading_project_info'),
+    t('loading_new_issues'),
+    t('loading_completed_issues'),
+    t('loading_data_processing')
   ];
 
   const reportGenerationSteps = [
-    '보고서 생성 준비 중...',
-    '데이터 분석 준비 중...',
-    'AI 분석 요청 중...',
-    '분석 결과 처리 중...',
-    '보고서 구성 중...'
+    t('report_gen_preparing'),
+    t('report_gen_data_analysis'),
+    t('report_gen_ai_request'),
+    t('report_gen_processing'),
+    t('report_gen_finalizing')
   ];
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -326,7 +330,7 @@ export function Dashboard() {
 
   const generateReport = async () => {
     if (filteredCompletedIssues.length === 0) {
-      alert('분석할 완료된 이슈가 없습니다.');
+      alert(t('no_completed_issues_to_analyze'));
       return;
     }
 
@@ -352,14 +356,15 @@ export function Dashboard() {
           dateRange: dateRange.startDate && dateRange.endDate ? {
             startDate: dateRange.startDate.toISOString().split('T')[0],
             endDate: dateRange.endDate.toISOString().split('T')[0]
-          } : null
+          } : null,
+          language: language
         }),
       });
 
       setReportGenerationStep(3); // 응답 처리 중
 
       if (!response.ok) {
-        throw new Error('보고서 생성에 실패했습니다.');
+        throw new Error(t('report_generation_failed'));
       }
 
       const data = await response.json();
@@ -377,7 +382,7 @@ export function Dashboard() {
       setShowReport(true);
     } catch (error) {
       console.error('Error generating report:', error);
-      alert('보고서 생성 중 오류가 발생했습니다.');
+      alert(t('report_generation_error'));
     } finally {
       setIsGeneratingReport(false);
       setReportGenerationStep(0);
@@ -387,7 +392,7 @@ export function Dashboard() {
   const DaysSelector = () => (
     <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
       <div className="flex gap-2 items-center">
-        <span className="text-sm text-muted-foreground">빠른 선택:</span>
+        <span className="text-sm text-muted-foreground">{t('quick_select')}</span>
         {[1, 7, 14, 30].map((days) => (
           <Badge
             key={days}
@@ -398,12 +403,12 @@ export function Dashboard() {
               setDateRange({ startDate: null, endDate: null });
             }}
           >
-            {days === 1 ? '오늘' : `${days}일`}
+            {days === 1 ? t('today') : t('n_days', days)}
           </Badge>
         ))}
       </div>
       <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground">또는</span>
+        <span className="text-sm text-muted-foreground">{t('or')}</span>
         <DateRangePicker
           value={dateRange}
           onChange={(range) => {
@@ -423,7 +428,7 @@ export function Dashboard() {
       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
       <Input
         ref={searchInputRef}
-        placeholder="이슈 제목, 키, 프로젝트, 담당자로 검색... (Enter로 검색)"
+        placeholder={t('search_placeholder')}
         value={searchQuery}
         onChange={handleSearchChange}
         onKeyDown={handleSearchKeyDown}
@@ -445,12 +450,12 @@ export function Dashboard() {
       <div className="container mx-auto p-4 sm:p-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-red-500">Error</CardTitle>
+            <CardTitle className="text-red-500">{t('error')}</CardTitle>
           </CardHeader>
           <CardContent>
             <p>{data.error}</p>
             <p className="mt-2 text-sm text-muted-foreground">
-              .env.local 파일에 Jira 설정이 올바르게 되어있는지 확인해주세요.
+              {t('check_env_config')}
             </p>
           </CardContent>
         </Card>
@@ -463,12 +468,13 @@ export function Dashboard() {
       <div className="mb-4 sm:mb-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
-            <h1 className="text-2xl sm:text-3xl font-bold">Jira Dashboard</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">{t('jira_dashboard')}</h1>
             <div className="sm:block">
               <Navigation />
             </div>
           </div>
           <div className="flex items-center gap-2 self-start sm:self-auto">
+            <LanguageSelector />
             <LogoutButton />
             <ThemeToggle />
           </div>
@@ -485,7 +491,7 @@ export function Dashboard() {
               {activeSearchQuery && (
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary" className="text-xs">
-                    검색: {activeSearchQuery}
+                    {t('search')}: {activeSearchQuery}
                   </Badge>
                 </div>
               )}
@@ -496,7 +502,7 @@ export function Dashboard() {
           </div>
           {activeSearchQuery && (
             <div className="text-xs sm:text-sm text-muted-foreground">
-              검색 결과: 새로운 이슈 {filteredNewIssues.length}개, 완료된 이슈 {filteredCompletedIssues.length}개
+              {t('search_results', filteredNewIssues.length, filteredCompletedIssues.length)}
             </div>
           )}
         </div>
@@ -543,16 +549,16 @@ export function Dashboard() {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span>새로 추가된 이슈</span>
+                <span>{t('newly_added_issues')}</span>
                 <Badge>{filteredNewIssues.length}</Badge>
               </div>
             </CardTitle>
             <CardDescription>
               {dateRange.startDate && dateRange.endDate 
-                ? `${dateRange.startDate.toLocaleDateString('ko-KR')} ~ ${dateRange.endDate.toLocaleDateString('ko-KR')} 생성된 이슈`
-                : `최근 ${daysBack === 1 ? '오늘' : `${daysBack}일간`} 생성된 이슈`
+                ? t('issues_created_date_range', dateRange.startDate.toLocaleDateString('ko-KR'), dateRange.endDate.toLocaleDateString('ko-KR'))
+                : t('issues_created_recent', daysBack === 1 ? t('today') : t('n_days', daysBack))
               }
-              {activeSearchQuery && ` (검색: "${activeSearchQuery}")`}
+              {activeSearchQuery && t('with_search', activeSearchQuery)}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -565,7 +571,7 @@ export function Dashboard() {
                 </>
               ) : filteredNewIssues.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">
-                  {activeSearchQuery ? '검색 결과가 없습니다.' : '새로 추가된 이슈가 없습니다.'}
+                  {activeSearchQuery ? t('no_search_results') : t('no_new_issues')}
                 </p>
               ) : (
                 filteredNewIssues.map((issue) => (
@@ -584,7 +590,7 @@ export function Dashboard() {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span>완료된 이슈</span>
+                <span>{t('completed_issues')}</span>
                 <Badge>{filteredCompletedIssues.length}</Badge>
               </div>
               <Button
@@ -595,15 +601,15 @@ export function Dashboard() {
                 className="text-xs font-medium border-purple-500 bg-purple-500 text-white hover:bg-purple-600 hover:border-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <FileText className="h-3 w-3 mr-1 text-white" />
-                {isGeneratingReport ? '분석중...' : 'AI 보고서'}
+                {isGeneratingReport ? t('generating') : t('generate_ai_report')}
               </Button>
             </CardTitle>
             <CardDescription>
               {dateRange.startDate && dateRange.endDate 
-                ? `${dateRange.startDate.toLocaleDateString('ko-KR')} ~ ${dateRange.endDate.toLocaleDateString('ko-KR')} 완료된 이슈`
-                : `최근 ${daysBack === 1 ? '오늘' : `${daysBack}일간`} 완료된 이슈`
+                ? t('issues_completed_date_range', dateRange.startDate.toLocaleDateString('ko-KR'), dateRange.endDate.toLocaleDateString('ko-KR'))
+                : t('issues_completed_recent', daysBack === 1 ? t('today') : t('n_days', daysBack))
               }
-              {activeSearchQuery && ` (검색: "${activeSearchQuery}")`}
+              {activeSearchQuery && t('with_search', activeSearchQuery)}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -616,7 +622,7 @@ export function Dashboard() {
                 </>
               ) : filteredCompletedIssues.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">
-                  {activeSearchQuery ? '검색 결과가 없습니다.' : '완료된 이슈가 없습니다.'}
+                  {activeSearchQuery ? t('no_search_results') : t('no_completed_issues')}
                 </p>
               ) : (
                 filteredCompletedIssues.map((issue) => (
@@ -636,7 +642,7 @@ export function Dashboard() {
         open={showReport}
         onOpenChange={setShowReport}
         reportData={reportData}
-        title="완료된 이슈 AI 분석 보고서"
+        title={t('ai_analysis_report')}
       />
     </div>
   );

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { LanguageProvider } from "@/contexts/language-context";
 
 export const metadata: Metadata = {
   title: "Jira Dashboard",
@@ -18,7 +19,9 @@ export default function RootLayout({
         <ThemeProvider
           defaultTheme="system"
         >
-          {children}
+          <LanguageProvider>
+            {children}
+          </LanguageProvider>
         </ThemeProvider>
       </body>
     </html>

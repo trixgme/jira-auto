@@ -23,6 +23,7 @@ import {
   Line,
   Legend
 } from 'recharts';
+import { useLanguage } from '@/contexts/language-context';
 
 interface ChartData {
   projectDistribution: Array<{ name: string; value: number }>;
@@ -59,6 +60,7 @@ interface ReportDialogProps {
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1', '#d084d0'];
 
 export function ReportDialog({ open, onOpenChange, reportData, title = "완료된 이슈 AI 분석 보고서" }: ReportDialogProps) {
+  const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -106,7 +108,7 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
               <DialogTitle className="text-lg sm:text-xl font-bold line-clamp-2 sm:line-clamp-1">{title}</DialogTitle>
               <Badge variant={reportData.reportType === 'ai' ? 'default' : 'secondary'} className="self-start sm:self-auto">
-                {reportData.reportType === 'ai' ? 'AI 분석' : '기본 분석'}
+                {reportData.reportType === 'ai' ? t('ai_analysis') : t('basic_analysis')}
               </Badge>
             </div>
             <div className="flex items-center gap-2">
@@ -117,7 +119,7 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                 className="text-xs px-2 sm:px-3"
               >
                 <Copy className="h-3 w-3 sm:mr-1" />
-                <span className="hidden sm:inline">{copied ? '복사됨!' : '복사'}</span>
+                <span className="hidden sm:inline">{copied ? t('copied') : t('copy')}</span>
               </Button>
               <Button
                 onClick={handleDownload}
@@ -126,7 +128,7 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                 className="text-xs px-2 sm:px-3"
               >
                 <Download className="h-3 w-3 sm:mr-1" />
-                <span className="hidden sm:inline">다운로드</span>
+                <span className="hidden sm:inline">{t('download')}</span>
               </Button>
             </div>
           </div>
@@ -142,8 +144,8 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                 className="text-xs whitespace-nowrap flex-shrink-0"
               >
                 <BarChart3 className="h-3 w-3 sm:mr-1" />
-                <span className="hidden sm:inline">전체 요약</span>
-                <span className="sm:hidden">요약</span>
+                <span className="hidden sm:inline">{t('overview')}</span>
+                <span className="sm:hidden">{t('overview')}</span>
               </Button>
               <Button
                 variant={activeTab === 'charts' ? 'default' : 'ghost'}
@@ -152,8 +154,8 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                 className="text-xs whitespace-nowrap flex-shrink-0"
               >
                 <PieChartIcon className="h-3 w-3 sm:mr-1" />
-                <span className="hidden sm:inline">차트 분석</span>
-                <span className="sm:hidden">차트</span>
+                <span className="hidden sm:inline">{t('charts')}</span>
+                <span className="sm:hidden">{t('charts')}</span>
               </Button>
               <Button
                 variant={activeTab === 'trends' ? 'default' : 'ghost'}
@@ -162,8 +164,8 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                 className="text-xs whitespace-nowrap flex-shrink-0"
               >
                 <TrendingUp className="h-3 w-3 sm:mr-1" />
-                <span className="sm:hidden">트렌드</span>
-                <span className="hidden sm:inline">트렌드</span>
+                <span className="sm:hidden">{t('trends')}</span>
+                <span className="hidden sm:inline">{t('trends')}</span>
               </Button>
               <Button
                 variant={activeTab === 'report' ? 'default' : 'ghost'}
@@ -172,8 +174,8 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                 className="text-xs whitespace-nowrap flex-shrink-0"
               >
                 <FileText className="h-3 w-3 sm:mr-1" />
-                <span className="hidden sm:inline">상세 보고서</span>
-                <span className="sm:hidden">보고서</span>
+                <span className="hidden sm:inline">{t('detailed_report')}</span>
+                <span className="sm:hidden">{t('detailed_report')}</span>
               </Button>
             </div>
 
@@ -182,13 +184,13 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                 {/* 분석 기간 표시 */}
                 <Card>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-base">📅 분석 기간</CardTitle>
+                    <CardTitle className="text-base">📅 {t('analysis_period')}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-muted-foreground">
                       {reportData.dateRange 
                         ? `${new Date(reportData.dateRange.startDate).toLocaleDateString('ko-KR')} ~ ${new Date(reportData.dateRange.endDate).toLocaleDateString('ko-KR')} (${Math.floor((new Date(reportData.dateRange.endDate).getTime() - new Date(reportData.dateRange.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1}일간)`
-                        : `최근 ${reportData.period}일간`
+                        : t('last_n_days', reportData.period)
                       }
                     </p>
                   </CardContent>
@@ -197,7 +199,7 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">총 완료 이슈</CardTitle>
+                      <CardTitle className="text-sm">{t('total_completed_issues')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <p className="text-xl sm:text-2xl font-bold">{chartData.totalStats.totalIssues}</p>
@@ -205,15 +207,15 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                   </Card>
                   <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">평균 완료 시간</CardTitle>
+                      <CardTitle className="text-sm">{t('avg_completion_time')}</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-xl sm:text-2xl font-bold">{chartData.totalStats.avgCompletionTime}일</p>
+                      <p className="text-xl sm:text-2xl font-bold">{chartData.totalStats.avgCompletionTime}{t('days')}</p>
                     </CardContent>
                   </Card>
                   <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">최다 완료 프로젝트</CardTitle>
+                      <CardTitle className="text-sm">{t('most_active_project')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <p className="text-sm font-medium truncate">{chartData.totalStats.mostActiveProject}</p>
@@ -221,7 +223,7 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                   </Card>
                   <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">최다 완료 담당자</CardTitle>
+                      <CardTitle className="text-sm">{t('most_active_assignee')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <p className="text-sm font-medium truncate">{chartData.totalStats.mostActiveAssignee}</p>
@@ -232,7 +234,7 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-sm">프로젝트별 완료 현황</CardTitle>
+                      <CardTitle className="text-sm">{t('completion_by_project')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <ResponsiveContainer width="100%" height={180} className="sm:h-[200px]">
@@ -249,7 +251,7 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
 
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-sm">이슈 유형별 분포</CardTitle>
+                      <CardTitle className="text-sm">{t('distribution_by_type')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <ResponsiveContainer width="100%" height={180} className="sm:h-[200px]">
@@ -283,7 +285,7 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-sm">담당자별 완료 현황 (Top 10)</CardTitle>
+                      <CardTitle className="text-sm">{t('completion_by_assignee')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <ResponsiveContainer width="100%" height={250} className="sm:h-[300px]">
@@ -311,7 +313,7 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
 
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-sm">우선순위별 완료 분포</CardTitle>
+                      <CardTitle className="text-sm">{t('distribution_by_priority')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <ResponsiveContainer width="100%" height={250} className="sm:h-[300px]">
@@ -345,7 +347,7 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
               <div className="mt-4">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-sm">일별 완료 트렌드</CardTitle>
+                    <CardTitle className="text-sm">{t('daily_completion_trend')}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={300} className="sm:h-[400px]">
@@ -361,7 +363,7 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                         />
                         <YAxis fontSize={9} />
                         <Tooltip 
-                          labelFormatter={(value) => `날짜: ${new Date(value).toLocaleDateString('ko-KR')}`}
+                          labelFormatter={(value) => `${t('date_label')}: ${new Date(value).toLocaleDateString('ko-KR')}`}
                           contentStyle={{ fontSize: '12px' }}
                         />
                         <Line 
@@ -370,7 +372,7 @@ export function ReportDialog({ open, onOpenChange, reportData, title = "완료�
                           stroke="#8884d8" 
                           strokeWidth={2}
                           dot={{ fill: '#8884d8', r: 3 }}
-                          name="완료 이슈 수"
+                          name={t('completed_issue_count')}
                         />
                       </LineChart>
                     </ResponsiveContainer>

@@ -23,7 +23,7 @@ interface ReportResult {
 
 export async function POST(request: NextRequest) {
   try {
-    const { issues, period, project, dateRange } = await request.json();
+    const { issues, period, project, dateRange, language = 'ko' } = await request.json();
 
     if (!issues || !Array.isArray(issues) || issues.length === 0) {
       return NextResponse.json(
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await generateCompletedIssuesReport(issues, period, project, dateRange);
+    const result = await generateCompletedIssuesReport(issues, period, project, dateRange, language);
 
     return NextResponse.json(result);
   } catch (error) {
@@ -139,7 +139,8 @@ async function generateCompletedIssuesReport(
   issues: JiraIssue[],
   period: number,
   project: string,
-  dateRange?: { startDate: string; endDate: string } | null
+  dateRange?: { startDate: string; endDate: string } | null,
+  language: string = 'ko'
 ): Promise<ReportResult> {
   // 모든 이슈 포함하되 필드별 토큰 최적화
   const getIssueSummary = () => {
@@ -197,7 +198,7 @@ async function generateCompletedIssuesReport(
 
   const periodText = dateRange 
     ? `${dateRange.startDate} ~ ${dateRange.endDate}`
-    : `최근 ${period}일`;
+    : language === 'en' ? `Last ${period} days` : `최근 ${period}일`;
 
   // 우선순위별 이모지 반환 함수
   const getPriorityEmoji = (priority: string): string => {
@@ -211,14 +212,14 @@ async function generateCompletedIssuesReport(
     }
   };
 
-  const prompt = `${periodText} 기간에 완료된 Jira 이슈에 대한 아름답고 전문적인 마크다운 보고서를 작성해주세요.
+  const prompt = `${language === 'en' ? 'Please create a beautiful and professional markdown report in English' : '아름답고 전문적인 마크다운 보고서를 한국어로 작성해주세요'} for Jira issues completed during ${periodText}.
 
-## 📋 기본 정보
-| 항목 | 세부사항 |
+## 📋 ${language === 'en' ? 'Basic Information' : '기본 정보'}
+| ${language === 'en' ? 'Item' : '항목'} | ${language === 'en' ? 'Details' : '세부사항'} |
 |------|----------|
-| 🎯 **프로젝트** | ${project === 'all' ? '전체 프로젝트' : project} |
-| 📅 **분석 기간** | ${periodText} |
-| ✅ **완료된 이슈** | ${issues.length}개 |
+| 🎯 **${language === 'en' ? 'Project' : '프로젝트'}** | ${project === 'all' ? (language === 'en' ? 'All Projects' : '전체 프로젝트') : project} |
+| 📅 **${language === 'en' ? 'Analysis Period' : '분석 기간'}** | ${periodText} |
+| ✅ **${language === 'en' ? 'Completed Issues' : '완료된 이슈'}** | ${issues.length}${language === 'en' ? '' : '개'} |
 
 ## 📊 통계 요약
 **프로젝트별:** ${stats.byProject.map(([name, count]) => `${name}(${count})`).join(', ')}
@@ -300,7 +301,9 @@ ${issuesSummary.map((issue, index) => {
         messages: [
           {
             role: 'system',
-            content: '프로젝트 관리 및 데이터 분석 전문가로서 Jira 이슈 데이터를 분석하여 실용적이고 통찰력 있는 마크다운 보고서를 작성합니다. 패턴과 트렌드를 발견하고 실행 가능한 개선안을 제공합니다.'
+            content: language === 'en' 
+              ? 'As a project management and data analysis expert, analyze Jira issue data to create a practical and insightful markdown report. Discover patterns and trends and provide actionable improvements. Write the entire report in English.'
+              : '프로젝트 관리 및 데이터 분석 전문가로서 Jira 이슈 데이터를 분석하여 실용적이고 통찰력 있는 마크다운 보고서를 작성합니다. 패턴과 트렌드를 발견하고 실행 가능한 개선안을 제공합니다. 전체 보고서를 한국어로 작성하세요.'
           },
           {
             role: 'user',
@@ -338,7 +341,7 @@ ${issuesSummary.map((issue, index) => {
     console.warn('OpenAI API 실패, 기본 보고서 생성:', error instanceof Error ? error.message : error);
     
     // OpenAI API 호출이 실패한 경우 기본 보고서 생성
-    const report = generateFallbackReport(issues, period, project, dateRange);
+    const report = generateFallbackReport(issues, period, project, dateRange, language);
     const chartData = generateChartData(issues);
     return { 
       report, 
@@ -352,7 +355,8 @@ function generateFallbackReport(
   issues: JiraIssue[],
   period: number,
   project: string,
-  dateRange?: { startDate: string; endDate: string } | null
+  dateRange?: { startDate: string; endDate: string } | null,
+  language: string = 'ko'
 ): string {
   const projectCounts = issues.reduce((acc, issue) => {
     const projectName = issue.fields.project.name;

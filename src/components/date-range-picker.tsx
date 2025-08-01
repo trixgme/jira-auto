@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useLanguage } from '@/contexts/language-context';
 
 interface DateRange {
   startDate: Date | null;
@@ -17,6 +18,7 @@ interface DateRangePickerProps {
 }
 
 export function DateRangePicker({ value, onChange, className }: DateRangePickerProps) {
+  const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedRange, setSelectedRange] = useState<DateRange>(value);
@@ -49,7 +51,7 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
 
   const getDisplayText = () => {
     if (!selectedRange.startDate && !selectedRange.endDate) {
-      return '날짜 범위 선택';
+      return t('custom_range');
     }
     if (selectedRange.startDate && !selectedRange.endDate) {
       return `${formatDate(selectedRange.startDate)} ~`;
@@ -57,7 +59,7 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
     if (selectedRange.startDate && selectedRange.endDate) {
       return `${formatDate(selectedRange.startDate)} ~ ${formatDate(selectedRange.endDate)}`;
     }
-    return '날짜 범위 선택';
+    return t('custom_range');
   };
 
   const getDaysInMonth = (date: Date) => {
@@ -130,7 +132,7 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
     const today = new Date();
     
     const days = [];
-    const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
+    const weekDays = [t('sun'), t('mon'), t('tue'), t('wed'), t('thu'), t('fri'), t('sat')];
 
     // 요일 헤더
     days.push(
@@ -194,11 +196,11 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
 
   const getPresetRanges = () => [
     {
-      label: '오늘',
+      label: t('today'),
       range: { startDate: new Date(), endDate: new Date() }
     },
     {
-      label: '어제',
+      label: t('yesterday'),
       range: (() => {
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
@@ -206,7 +208,7 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
       })()
     },
     {
-      label: '최근 7일',
+      label: t('last_n_days', 7),
       range: (() => {
         const end = new Date();
         const start = new Date();
@@ -215,7 +217,7 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
       })()
     },
     {
-      label: '최근 30일',
+      label: t('last_n_days', 30),
       range: (() => {
         const end = new Date();
         const start = new Date();
@@ -224,7 +226,7 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
       })()
     },
     {
-      label: '이번 달',
+      label: t('this_month'),
       range: (() => {
         const now = new Date();
         const start = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -252,7 +254,7 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
               <div className="space-y-4">
                 {/* 프리셋 범위 */}
                 <div>
-                  <h4 className="text-sm font-medium mb-2">빠른 선택</h4>
+                  <h4 className="text-sm font-medium mb-2">{t('quick_select')}</h4>
                   <div className="grid grid-cols-2 gap-2">
                     {getPresetRanges().map((preset) => (
                       <Button
@@ -300,7 +302,7 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
                 {/* 선택된 범위 표시 */}
                 {(selectedRange.startDate || selectedRange.endDate) && (
                   <div className="text-xs text-muted-foreground border-t pt-2">
-                    선택된 범위: {getDisplayText()}
+                    {t('selected_range')}: {getDisplayText()}
                   </div>
                 )}
 
@@ -311,14 +313,14 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
                     size="sm"
                     onClick={handleClear}
                   >
-                    초기화
+                    {t('reset_filter')}
                   </Button>
                   <Button
                     size="sm"
                     onClick={handleApply}
                     disabled={!selectedRange.startDate}
                   >
-                    적용
+                    {t('apply')}
                   </Button>
                 </div>
               </div>

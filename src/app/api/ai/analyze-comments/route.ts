@@ -32,7 +32,7 @@ function getScoreDescription(score: number): { ko: string; en: string } {
 
 export async function POST(req: NextRequest) {
   try {
-    const { issueKey, issueTitle, issueDescription } = await req.json();
+    const { issueKey, issueTitle, issueDescription, language = 'ko' } = await req.json();
 
     if (!issueKey) {
       return NextResponse.json(
@@ -185,8 +185,9 @@ Respond with ONLY a JSON object in this format:
       // 필수 필드 검증 및 기본값 설정
       const validatedResult = {
         score: result.score || 5,
-        analysisKo: result.analysisKo || "분석을 완료할 수 없습니다.",
-        analysisEn: result.analysisEn || "Unable to complete analysis.",
+        analysis: language === 'en' 
+          ? (result.analysisEn || "Unable to complete analysis.")
+          : (result.analysisKo || "분석을 완료할 수 없습니다."),
         isHardToDetermine: result.isHardToDetermine || false,
         keyIssues: Array.isArray(result.keyIssues) ? result.keyIssues : [],
         recommendations: Array.isArray(result.recommendations) ? result.recommendations : []
@@ -196,8 +197,7 @@ Respond with ONLY a JSON object in this format:
       const scoreDescription = getScoreDescription(validatedResult.score);
       const finalResult = {
         ...validatedResult,
-        scoreDescriptionKo: scoreDescription.ko,
-        scoreDescriptionEn: scoreDescription.en
+        scoreDescription: language === 'en' ? scoreDescription.en : scoreDescription.ko
       };
       
       return NextResponse.json(finalResult);
@@ -208,18 +208,20 @@ Respond with ONLY a JSON object in this format:
       // 파싱 실패 시 기본 응답 반환
       const fallbackResult = {
         score: 5,
-        analysisKo: "AI 응답 파싱에 실패했습니다. 댓글을 수동으로 검토해주세요.",
-        analysisEn: "Failed to parse AI response. Please review comments manually.",
+        analysis: language === 'en'
+          ? "Failed to parse AI response. Please review comments manually."
+          : "AI 응답 파싱에 실패했습니다. 댓글을 수동으로 검토해주세요.",
         isHardToDetermine: true,
-        keyIssues: ["AI 분석 오류"],
-        recommendations: ["댓글을 수동으로 검토하고 팀과 직접 소통하세요"]
+        keyIssues: language === 'en' ? ["AI analysis error"] : ["AI 분석 오류"],
+        recommendations: language === 'en' 
+          ? ["Review comments manually and communicate directly with the team"]
+          : ["댓글을 수동으로 검토하고 팀과 직접 소통하세요"]
       };
       
       const scoreDescription = getScoreDescription(fallbackResult.score);
       const finalFallbackResult = {
         ...fallbackResult,
-        scoreDescriptionKo: scoreDescription.ko,
-        scoreDescriptionEn: scoreDescription.en
+        scoreDescription: language === 'en' ? scoreDescription.en : scoreDescription.ko
       };
       
       return NextResponse.json(finalFallbackResult);

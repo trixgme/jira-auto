@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
+import { useLanguage } from '@/contexts/language-context';
 
 interface LoadingProgressProps {
   isLoading: boolean;
@@ -13,6 +14,7 @@ interface LoadingProgressProps {
 }
 
 export function LoadingProgress({ isLoading, steps, currentStep = 0, className }: LoadingProgressProps) {
+  const { t } = useLanguage();
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -37,7 +39,7 @@ export function LoadingProgress({ isLoading, steps, currentStep = 0, className }
           <div className="flex items-center gap-3">
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
             <span className="text-sm font-medium">
-              Jira 데이터를 가져오는 중...
+              {t('loading_jira_data')}
             </span>
           </div>
           
@@ -74,7 +76,7 @@ export function LoadingProgress({ isLoading, steps, currentStep = 0, className }
           </div>
 
           <div className="text-xs text-muted-foreground">
-            {currentStep + 1} / {steps.length} 단계 진행 중
+            {t('loading_step_progress', currentStep + 1, steps.length)}
           </div>
         </div>
       </CardContent>
