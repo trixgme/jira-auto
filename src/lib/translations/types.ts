@@ -335,4 +335,18 @@ export interface TranslationKeys {
   ai_comprehensive_analysis: string;
   ai_analyzing: string;
   ai_analysis_failed_retry: string;
+  
+  // Month names
+  january: string;
+  february: string;
+  march: string;
+  april: string;
+  may: string;
+  june: string;
+  july: string;
+  august: string;
+  september: string;
+  october: string;
+  november: string;
+  december: string;
 }

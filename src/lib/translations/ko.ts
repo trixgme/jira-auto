@@ -334,5 +334,19 @@ export const ko: TranslationKeys = {
   score: '점수',
   ai_comprehensive_analysis: 'AI 종합 분석',
   ai_analyzing: 'AI 분석 중...',
-  ai_analysis_failed_retry: 'AI 분석 실패. 다시 시도해주세요.'
+  ai_analysis_failed_retry: 'AI 분석 실패. 다시 시도해주세요.',
+  
+  // 월 이름
+  january: '1월',
+  february: '2월',
+  march: '3월',
+  april: '4월',
+  may: '5월',
+  june: '6월',
+  july: '7월',
+  august: '8월',
+  september: '9월',
+  october: '10월',
+  november: '11월',
+  december: '12월'
 };

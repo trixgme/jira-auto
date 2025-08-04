@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { DifficultyCache } from '@/lib/difficulty-cache';
 import { useLanguage } from '@/contexts/language-context';
 import { LanguageSelector } from '@/components/language-selector';
+import type { TranslationKeys } from '@/lib/translations/types';
 import { KpiScoreCard } from '@/components/kpi-score-card';
 import { calculateKpiScore, type KpiScoreBreakdown } from '@/lib/kpi-score';
 import { GradientProgress } from '@/components/ui/gradient-progress';
@@ -593,6 +594,15 @@ export function KpiDashboard() {
     }
   };
 
+  const getMonthName = (monthNum: number): string => {
+    const monthKeys: Array<keyof TranslationKeys> = [
+      'january', 'february', 'march', 'april', 'may', 'june',
+      'july', 'august', 'september', 'october', 'november', 'december'
+    ];
+    
+    return t(monthKeys[monthNum - 1]);
+  };
+
   const calculateUserKpiScore = (userKpi: UserKpi) => {
     const assignedIssues = userIssues[userKpi.user] || [];
     const resolvedIssues = assignedIssues.filter(issue => {
@@ -690,7 +700,7 @@ export function KpiDashboard() {
                     setDateRange({ startDate: null, endDate: null });
                   }}
                 >
-                  {month}{t('month')}
+                  {getMonthName(month)}
                 </Badge>
               ))}
             </div>

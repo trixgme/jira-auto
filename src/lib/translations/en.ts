@@ -334,5 +334,19 @@ export const en: TranslationKeys = {
   score: 'Score',
   ai_comprehensive_analysis: 'AI Comprehensive Analysis',
   ai_analyzing: 'AI Analyzing...',
-  ai_analysis_failed_retry: 'AI analysis failed. Please try again.'
+  ai_analysis_failed_retry: 'AI analysis failed. Please try again.',
+  
+  // Month names
+  january: 'January',
+  february: 'February',
+  march: 'March',
+  april: 'April',
+  may: 'May',
+  june: 'June',
+  july: 'July',
+  august: 'August',
+  september: 'September',
+  october: 'October',
+  november: 'November',
+  december: 'December'
 };
