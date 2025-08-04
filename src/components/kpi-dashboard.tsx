@@ -19,6 +19,9 @@ import { Button } from '@/components/ui/button';
 import { DifficultyCache } from '@/lib/difficulty-cache';
 import { useLanguage } from '@/contexts/language-context';
 import { LanguageSelector } from '@/components/language-selector';
+import { KpiScoreCard } from '@/components/kpi-score-card';
+import { calculateKpiScore, type KpiScoreBreakdown } from '@/lib/kpi-score';
+import { GradientProgress } from '@/components/ui/gradient-progress';
 
 interface UserKpi {
   user: string;
@@ -95,6 +98,8 @@ export function KpiDashboard() {
   const [analyzingComments, setAnalyzingComments] = useState<Set<string>>(new Set());
   const [commentsAnalysis, setCommentsAnalysis] = useState<Record<string, CommentAnalysis>>({});
   const [showCommentAnalysisDialog, setShowCommentAnalysisDialog] = useState<string | null>(null);
+  const [selectedUserKpiScore, setSelectedUserKpiScore] = useState<{user: string; score: KpiScoreBreakdown} | null>(null);
+  const [showKpiScoreDialog, setShowKpiScoreDialog] = useState(false);
 
   useEffect(() => {
     loadFavoriteUsers();
@@ -588,6 +593,31 @@ export function KpiDashboard() {
     }
   };
 
+  const calculateUserKpiScore = (userKpi: UserKpi) => {
+    const assignedIssues = userIssues[userKpi.user] || [];
+    const resolvedIssues = assignedIssues.filter(issue => {
+      const isResolved = issue.fields.status.statusCategory?.key === 'done' || 
+        ['Done', 'Resolved', 'Closed', 'Complete', 'Fixed'].includes(issue.fields.status.name);
+      return isResolved;
+    });
+    const unresolvedIssues = assignedIssues.filter(issue => {
+      const isResolved = issue.fields.status.statusCategory?.key === 'done' || 
+        ['Done', 'Resolved', 'Closed', 'Complete', 'Fixed'].includes(issue.fields.status.name);
+      return !isResolved;
+    });
+
+    const kpiScore = calculateKpiScore(
+      assignedIssues,
+      resolvedIssues,
+      unresolvedIssues,
+      userKpi.avgResolutionTime,
+      issuesDifficulty
+    );
+
+    setSelectedUserKpiScore({ user: userKpi.user, score: kpiScore });
+    setShowKpiScoreDialog(true);
+  };
+
   if (data.error) {
     return (
       <div className="container mx-auto p-6">
@@ -898,9 +928,19 @@ export function KpiDashboard() {
                               </DialogTrigger>
                             <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
                               <DialogHeader>
-                                <DialogTitle>{t('user_assigned_issues', userKpi.user)}</DialogTitle>
+                                <DialogTitle className="flex items-center justify-between gap-4">
+                                  <span className="flex-1 min-w-0">{t('user_assigned_issues', userKpi.user)}</span>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => calculateUserKpiScore(userKpi)}
+                                    className="flex-shrink-0 whitespace-nowrap"
+                                  >
+                                    📊 KPI {t('score')}
+                                  </Button>
+                                </DialogTitle>
                                 <DialogDescription>
-                                  {t('month_assigned_issues_list', userKpi.assigned, selectedMonth)}
+                                  {userKpi.assigned} {t('assigned_issues')} | {userKpi.resolved} {t('resolved_issues')} | {t('resolution_rate')}: {userKpi.assigned > 0 ? Math.round((userKpi.resolved / userKpi.assigned) * 100) : 0}%
                                 </DialogDescription>
                               </DialogHeader>
                               
@@ -1119,14 +1159,16 @@ export function KpiDashboard() {
                         </td>
                         <td className="py-3 px-4 text-center">
                           <div className="flex items-center justify-center">
-                            <div className="w-24 h-4 bg-gray-200 rounded-full overflow-hidden">
-                              <div 
-                                className={`h-full transition-all duration-500 ease-out ${
-                                  resolutionRate >= 80 ? 'bg-green-500' : 
-                                  resolutionRate >= 60 ? 'bg-yellow-500' : 
-                                  'bg-red-500'
-                                }`}
-                                style={{ width: `${resolutionRate}%` }}
+                            <div className="w-24">
+                              <GradientProgress 
+                                value={resolutionRate} 
+                                height="sm" 
+                                showText={false}
+                                gradientType={
+                                  resolutionRate >= 80 ? 'success' : 
+                                  resolutionRate >= 60 ? 'warning' : 
+                                  'danger'
+                                }
                               />
                             </div>
                           </div>
@@ -1202,16 +1244,16 @@ export function KpiDashboard() {
                           <span className="text-sm text-muted-foreground">{t('resolution_rate_progress')}</span>
                           <span className="text-sm font-medium">{resolutionRate}%</span>
                         </div>
-                        <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full transition-all duration-500 ease-out ${
-                              resolutionRate >= 80 ? 'bg-green-500' : 
-                              resolutionRate >= 60 ? 'bg-yellow-500' : 
-                              'bg-red-500'
-                            }`}
-                            style={{ width: `${resolutionRate}%` }}
-                          />
-                        </div>
+                        <GradientProgress 
+                          value={resolutionRate} 
+                          height="md" 
+                          showText={false}
+                          gradientType={
+                            resolutionRate >= 80 ? 'success' : 
+                            resolutionRate >= 60 ? 'warning' : 
+                            'danger'
+                          }
+                        />
                       </div>
                       
                       {/* 이슈 목록 버튼 */}
@@ -1224,7 +1266,17 @@ export function KpiDashboard() {
                           </DialogTrigger>
                           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
                             <DialogHeader>
-                              <DialogTitle>{t('user_issue_list', userKpi.user)}</DialogTitle>
+                              <DialogTitle className="flex items-center justify-between gap-4">
+                                <span className="flex-1 min-w-0">{t('user_issue_list', userKpi.user)}</span>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => calculateUserKpiScore(userKpi)}
+                                  className="flex-shrink-0 whitespace-nowrap"
+                                >
+                                  📊 KPI {t('score')}
+                                </Button>
+                              </DialogTitle>
                               <div className="flex gap-2 mt-2">
                                 <Button
                                   variant={selectedUserFilter === 'all' ? 'default' : 'outline'}
@@ -1456,6 +1508,30 @@ export function KpiDashboard() {
           }
           analysis={commentsAnalysis[showCommentAnalysisDialog]}
         />
+      )}
+      
+      {/* KPI 점수 다이얼로그 */}
+      {selectedUserKpiScore && (
+        <Dialog open={showKpiScoreDialog} onOpenChange={setShowKpiScoreDialog}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                📊 {selectedUserKpiScore.user} - KPI 상세 분석
+              </DialogTitle>
+              <DialogDescription>
+                종합 성과 분석 및 개선 권장사항
+              </DialogDescription>
+            </DialogHeader>
+            <div className="mt-4">
+              <KpiScoreCard
+                scoreBreakdown={selectedUserKpiScore.score}
+                userName={selectedUserKpiScore.user}
+                assignedCount={data.userKpis.find(u => u.user === selectedUserKpiScore.user)?.assigned || 0}
+                resolvedCount={data.userKpis.find(u => u.user === selectedUserKpiScore.user)?.resolved || 0}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

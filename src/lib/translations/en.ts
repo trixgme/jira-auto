@@ -79,7 +79,6 @@ export const en: TranslationKeys = {
   analysis_result_ko: 'Analysis Result',
   analysis_result_en: 'Analysis Result',
   key_issues: 'Key Issues',
-  improvement_recommendations: 'Improvement Recommendations',
   
   // Issue Card
   assignee: 'Assignee',
@@ -305,5 +304,35 @@ export const en: TranslationKeys = {
   status_closed: 'Closed',
   status_reopened: 'Reopened',
   status_review: 'Review',
-  status_testing: 'Testing'
+  status_testing: 'Testing',
+
+  // KPI Score related
+  kpi_score_title: '{} KPI Score',
+  points: 'pts',
+  overall_performance: 'Overall Performance',
+  completion_rate: 'Completion Rate',
+  detailed_score_analysis: 'Detailed Score Analysis',
+  completion_rate_score: 'Completion Rate Score',
+  completion_rate_tooltip: 'Ratio of completed issues to assigned issues (max 40 points)',
+  productivity_score: 'Productivity Score',
+  productivity_tooltip: 'Productivity evaluation based on average resolution time (max 30 points)',
+  quality_score: 'Quality Score',
+  quality_tooltip: 'Complex issue handling capability through AI analysis (max 20 points)',
+  consistency_score: 'Consistency Score',
+  consistency_tooltip: 'Work pattern and resolution time consistency evaluation (max 10 points)',
+  completed_ratio: 'Completed {} / Assigned {}',
+  avg_difficulty_handled: 'Avg Difficulty Handled: {} pts',
+  no_ai_analysis_available: 'No AI analysis data available',
+  work_pattern_consistency: 'Work Pattern Consistency',
+  additional_metrics: 'Additional Metrics',
+  work_frequency: 'Work Frequency',
+  complexity_bonus: 'Complexity Bonus',
+  time_consistency: 'Time Consistency',
+  grade_level: 'Performance Grade',
+  grade: 'Grade',
+  improvement_recommendations: 'Improvement Recommendations',
+  score: 'Score',
+  ai_comprehensive_analysis: 'AI Comprehensive Analysis',
+  ai_analyzing: 'AI Analyzing...',
+  ai_analysis_failed_retry: 'AI analysis failed. Please try again.'
 };

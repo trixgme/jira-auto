@@ -79,7 +79,6 @@ export interface TranslationKeys {
   analysis_result_ko: string;
   analysis_result_en: string;
   key_issues: string;
-  improvement_recommendations: string;
   
   // Issue Card
   assignee: string;
@@ -306,4 +305,34 @@ export interface TranslationKeys {
   status_reopened: string;
   status_review: string;
   status_testing: string;
+
+  // KPI 점수 관련
+  kpi_score_title: string;
+  points: string;
+  overall_performance: string;
+  completion_rate: string;
+  detailed_score_analysis: string;
+  completion_rate_score: string;
+  completion_rate_tooltip: string;
+  productivity_score: string;
+  productivity_tooltip: string;
+  quality_score: string;
+  quality_tooltip: string;
+  consistency_score: string;
+  consistency_tooltip: string;
+  completed_ratio: string;
+  avg_difficulty_handled: string;
+  no_ai_analysis_available: string;
+  work_pattern_consistency: string;
+  additional_metrics: string;
+  work_frequency: string;
+  complexity_bonus: string;
+  time_consistency: string;
+  grade_level: string;
+  grade: string;
+  improvement_recommendations: string;
+  score: string;
+  ai_comprehensive_analysis: string;
+  ai_analyzing: string;
+  ai_analysis_failed_retry: string;
 }

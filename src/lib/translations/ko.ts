@@ -79,7 +79,6 @@ export const ko: TranslationKeys = {
   analysis_result_ko: '분석 결과',
   analysis_result_en: '분석 결과',
   key_issues: '주요 이슈',
-  improvement_recommendations: '개선 권장사항',
   
   // Issue Card
   assignee: '담당자',
@@ -305,5 +304,35 @@ export const ko: TranslationKeys = {
   status_closed: '종료',
   status_reopened: '다시 열림',
   status_review: '검토',
-  status_testing: '테스트'
+  status_testing: '테스트',
+
+  // KPI 점수 관련
+  kpi_score_title: '{} KPI 점수',
+  points: '점',
+  overall_performance: '전체 성과',
+  completion_rate: '완료율',
+  detailed_score_analysis: '상세 점수 분석',
+  completion_rate_score: '완료율 점수',
+  completion_rate_tooltip: '할당받은 이슈 대비 완료한 이슈의 비율입니다 (최대 40점)',
+  productivity_score: '생산성 점수',
+  productivity_tooltip: '평균 해결 시간을 기반으로 한 생산성 평가입니다 (최대 30점)',
+  quality_score: '품질 점수',
+  quality_tooltip: 'AI 분석을 통한 복잡한 이슈 처리 능력 평가입니다 (최대 20점)',
+  consistency_score: '일관성 점수',
+  consistency_tooltip: '작업 패턴과 해결 시간의 일관성 평가입니다 (최대 10점)',
+  completed_ratio: '완료 {}개 / 할당 {}개',
+  avg_difficulty_handled: '평균 처리 난이도: {}점',
+  no_ai_analysis_available: 'AI 분석 데이터 없음',
+  work_pattern_consistency: '작업 패턴 일관성',
+  additional_metrics: '추가 지표',
+  work_frequency: '작업 빈도',
+  complexity_bonus: '복잡도 보너스',
+  time_consistency: '시간 일관성',
+  grade_level: '성과 등급',
+  grade: '등급',
+  improvement_recommendations: '개선 권장사항',
+  score: '점수',
+  ai_comprehensive_analysis: 'AI 종합 분석',
+  ai_analyzing: 'AI 분석 중...',
+  ai_analysis_failed_retry: 'AI 분석 실패. 다시 시도해주세요.'
 };

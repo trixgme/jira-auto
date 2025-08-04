@@ -67,4 +67,22 @@
       background: conic-gradient(from 360deg, #fbbf24, #f59e0b, #d97706, #dc2626, #7c3aed, #5b21b6, #fbbf24);
     }
   }
+
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+      opacity: 0;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+  }
+
+  .progress-shimmer {
+    animation: shimmer 2s ease-in-out infinite;
+  }
 }
