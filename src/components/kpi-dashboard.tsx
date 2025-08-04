@@ -938,21 +938,23 @@ export function KpiDashboard() {
                               </DialogTrigger>
                             <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
                               <DialogHeader>
-                                <DialogTitle className="flex items-center justify-between gap-4">
-                                  <span className="flex-1 min-w-0">{t('user_assigned_issues', userKpi.user)}</span>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => calculateUserKpiScore(userKpi)}
-                                    className="flex-shrink-0 whitespace-nowrap"
-                                  >
-                                    📊 KPI {t('score')}
-                                  </Button>
-                                </DialogTitle>
+                                <DialogTitle>{t('user_assigned_issues', userKpi.user)}</DialogTitle>
                                 <DialogDescription>
                                   {userKpi.assigned} {t('assigned_issues')} | {userKpi.resolved} {t('resolved_issues')} | {t('resolution_rate')}: {userKpi.assigned > 0 ? Math.round((userKpi.resolved / userKpi.assigned) * 100) : 0}%
                                 </DialogDescription>
                               </DialogHeader>
+                              
+                              {/* KPI 점수 버튼을 별도 섹션으로 분리 */}
+                              <div className="flex justify-end mb-4">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => calculateUserKpiScore(userKpi)}
+                                  className="flex items-center gap-2"
+                                >
+                                  📊 KPI {t('score')}
+                                </Button>
+                              </div>
                               
                               {/* 상태 필터 */}
                               <div className="flex gap-2 mb-4">
@@ -1276,18 +1278,23 @@ export function KpiDashboard() {
                           </DialogTrigger>
                           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
                             <DialogHeader>
-                              <DialogTitle className="flex items-center justify-between gap-4">
-                                <span className="flex-1 min-w-0">{t('user_issue_list', userKpi.user)}</span>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => calculateUserKpiScore(userKpi)}
-                                  className="flex-shrink-0 whitespace-nowrap"
-                                >
-                                  📊 KPI {t('score')}
-                                </Button>
-                              </DialogTitle>
-                              <div className="flex gap-2 mt-2">
+                              <DialogTitle>{t('user_issue_list', userKpi.user)}</DialogTitle>
+                            </DialogHeader>
+                            
+                            {/* KPI 점수 버튼을 별도 섹션으로 분리 */}
+                            <div className="flex justify-end mb-4">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => calculateUserKpiScore(userKpi)}
+                                className="flex items-center gap-2"
+                              >
+                                📊 KPI {t('score')}
+                              </Button>
+                            </div>
+                            
+                            {/* 상태 필터 */}
+                            <div className="flex gap-2 mb-4">
                                 <Button
                                   variant={selectedUserFilter === 'all' ? 'default' : 'outline'}
                                   size="sm"
@@ -1309,8 +1316,8 @@ export function KpiDashboard() {
                                 >
                                   {t('completed')} ({getFilteredIssuesCount(userIssues[userKpi.user], 'completed')})
                                 </Button>
-                              </div>
-                            </DialogHeader>
+                            </div>
+                            
                             <div className="space-y-3">
                               {(() => {
                                 const filteredIssues = filterUserIssues(userIssues[userKpi.user] || [], selectedUserFilter);
